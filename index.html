@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Great Lakes Loop — Backseat HQ</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#175E44">
+<!-- No external assets: fonts, storage, and all game logic are fully self-contained for offline use -->
+<style>
+:root{
+  --font-display:'Arial Black','Segoe UI Black','Helvetica Neue',Impact,sans-serif;
+  --font-body:-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --pine:#175E44;
+  --pine-dark:#0D3D2C;
+  --sand:#F7EEDA;
+  --paper:#FFFDF5;
+  --lake:#1D6E8F;
+  --lake-dark:#144F68;
+  --marigold:#F7B32B;
+  --campfire:#D9542B;
+  --ink:#1C2B26;
+  --ink-soft:#4A5B54;
+  --line:#E3D6BA;
+  --radius:14px;
+  --shadow:0 2px 0 rgba(28,43,38,.14);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-body);
+  background:var(--sand);
+  color:var(--ink);
+  font-size:16px;
+  line-height:1.5;
+  padding-bottom:84px;
+}
+.wrap{max-width:680px;margin:0 auto;padding:14px 14px 0}
+
+/* ---------- Highway guide sign header ---------- */
+.sign{
+  background:var(--pine);
+  border:4px solid #fff;
+  outline:3px solid var(--pine-dark);
+  border-radius:18px;
+  color:#fff;
+  padding:18px 16px 14px;
+  text-align:center;
+  box-shadow:0 4px 0 rgba(13,61,44,.35);
+  position:relative;
+}
+.sign .eyebrow{
+  font-family:var(--font-display);
+  font-size:.62rem;
+  letter-spacing:.22em;
+  color:var(--marigold);
+}
+.sign h1{
+  font-family:var(--font-display);
+  font-size:clamp(1.5rem,6.4vw,2.2rem);
+  line-height:1.05;
+  margin:4px 0 6px;
+  text-shadow:0 2px 0 var(--pine-dark);
+}
+.sign .crew{font-weight:800;font-size:.85rem;opacity:.92}
+.sign .arrow{
+  position:absolute;right:14px;top:14px;
+  font-size:1.2rem;transform:rotate(0deg);
+}
+.netbadge{
+  display:inline-block;margin-top:6px;
+  font-size:.6rem;font-weight:900;letter-spacing:.04em;
+  background:var(--pine-dark);color:#CFE3D8;
+  border-radius:999px;padding:3px 10px;
+}
+.netbadge.off{background:var(--campfire);color:#fff}
+.stats{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:8px;margin-top:12px;
+}
+.stat{
+  background:var(--pine-dark);
+  border-radius:10px;padding:8px 4px 6px;
+}
+.stat b{
+  font-family:var(--font-display);
+  display:block;font-size:1.05rem;color:var(--marigold);
+}
+.stat span{font-size:.62rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+
+/* ---------- The road strip (signature) ---------- */
+.roadbox{margin:16px 0 6px}
+.roadbox .roadlabel{
+  font-family:var(--font-display);font-size:.68rem;letter-spacing:.14em;
+  color:var(--ink-soft);margin:0 2px 6px;
+}
+.road{
+  position:relative;
+  background:#3E4742;
+  border-radius:14px;
+  padding:26px 10px 10px;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.road::-webkit-scrollbar{display:none}
+.road .lane{
+  position:absolute;left:0;right:0;top:30px;height:0;
+  border-top:4px dashed var(--marigold);
+  min-width:640px;
+}
+.stops{
+  display:flex;gap:8px;min-width:640px;position:relative;
+}
+.stop-chip{
+  flex:1;
+  background:var(--pine);
+  color:#fff;border:2px solid #fff;
+  border-radius:9px;
+  font-family:var(--font-display);
+  font-size:.56rem;line-height:1.2;
+  padding:7px 4px;text-align:center;
+  cursor:pointer;
+  transition:transform .15s;
+}
+.stop-chip small{display:block;font-family:var(--font-body);font-weight:800;font-size:.6rem;opacity:.85}
+.stop-chip.active{background:var(--marigold);color:var(--pine-dark);transform:translateY(-3px)}
+.rv{
+  position:absolute;top:-2px;left:0;
+  font-size:1.35rem;
+  transition:left .6s cubic-bezier(.4,1.4,.6,1);
+  filter:drop-shadow(0 2px 0 rgba(0,0,0,.3));
+}
+
+/* ---------- Tabs (bottom, thumb-friendly) ---------- */
+.tabbar{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:var(--pine-dark);
+  display:flex;justify-content:center;gap:4px;
+  padding:8px 8px calc(8px + env(safe-area-inset-bottom));
+  border-top:3px solid var(--marigold);
+}
+.tab{
+  flex:1;max-width:150px;
+  background:transparent;border:0;color:#CFE3D8;
+  font-family:var(--font-body);font-weight:900;font-size:.72rem;
+  padding:6px 2px;border-radius:10px;cursor:pointer;
+}
+.tab .ico{display:block;font-size:1.25rem;margin-bottom:2px}
+.tab.active{background:var(--pine);color:#fff;box-shadow:inset 0 0 0 2px var(--marigold)}
+
+/* ---------- Sections & cards ---------- */
+section{display:none;padding-top:10px}
+section.show{display:block}
+.h2{
+  font-family:var(--font-display);
+  font-size:1.05rem;color:var(--pine-dark);
+  margin:14px 2px 8px;
+}
+.h2 em{font-style:normal;color:var(--campfire)}
+.card{
+  background:var(--paper);
+  border:2px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:14px;margin-bottom:12px;
+}
+.leg-head{display:flex;align-items:center;gap:10px;cursor:pointer}
+.leg-emoji{
+  font-size:1.6rem;width:48px;height:48px;flex:none;
+  background:var(--sand);border:2px solid var(--line);border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+}
+.leg-title{font-weight:900;font-size:1.02rem;line-height:1.2}
+.leg-sub{font-size:.76rem;font-weight:800;color:var(--lake)}
+.leg-caret{margin-left:auto;font-weight:900;color:var(--ink-soft);transition:transform .2s}
+.leg.open .leg-caret{transform:rotate(90deg)}
+.leg-body{display:none;margin-top:12px}
+.leg.open .leg-body{display:block}
+.facts{list-style:none}
+.facts li{
+  padding:7px 0 7px 26px;position:relative;font-size:.92rem;
+  border-bottom:1px dashed var(--line);
+}
+.facts li:last-child{border-bottom:0}
+.facts li::before{content:"📍";position:absolute;left:0;top:7px;font-size:.85rem}
+.mini{
+  border-radius:10px;padding:10px 12px;margin-top:10px;font-size:.9rem;
+}
+.mini b{display:block;font-family:var(--font-display);font-size:.6rem;letter-spacing:.12em;margin-bottom:3px}
+.mini.challenge{background:#EAF3EE;border:2px solid #BFDCCB}
+.mini.challenge b{color:var(--pine)}
+.mini.legjoke{background:#FDF3DC;border:2px solid #F2DCA4}
+.mini.legjoke b{color:var(--campfire)}
+.mini .punch{display:none;font-weight:800;margin-top:4px}
+.mini.revealed .punch{display:block}
+.mini .tapme{font-size:.72rem;font-weight:800;color:var(--ink-soft)}
+.mini.revealed .tapme{display:none}
+
+/* ---------- Buttons ---------- */
+.btn{
+  font-family:var(--font-body);font-weight:900;
+  border:0;border-radius:12px;cursor:pointer;
+  padding:12px 18px;font-size:.95rem;
+  box-shadow:0 3px 0 rgba(28,43,38,.25);
+  transition:transform .1s;
+}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(28,43,38,.25)}
+.btn-pine{background:var(--pine);color:#fff}
+.btn-gold{background:var(--marigold);color:var(--pine-dark)}
+.btn-lake{background:var(--lake);color:#fff}
+.btn-ghost{background:var(--sand);color:var(--ink);border:2px solid var(--line);box-shadow:none}
+.btn-block{display:block;width:100%}
+
+/* ---------- License plate hunt ---------- */
+.score-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--pine-dark);color:var(--marigold);
+  font-family:var(--font-display);font-size:.8rem;
+  border-radius:999px;padding:6px 14px;margin-bottom:10px;
+}
+.plates{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.plate{
+  background:#fff;border:2px solid var(--ink);
+  border-radius:8px;padding:8px 4px 6px;text-align:center;cursor:pointer;
+  position:relative;user-select:none;
+}
+.plate .abbr{font-family:var(--font-display);font-size:1rem;letter-spacing:.04em}
+.plate .pname{font-size:.6rem;font-weight:800;color:var(--ink-soft);display:block}
+.plate .pts{
+  position:absolute;top:-8px;right:-6px;
+  background:var(--lake);color:#fff;font-size:.58rem;font-weight:900;
+  border-radius:999px;padding:2px 6px;
+}
+.plate.rare .pts{background:var(--campfire)}
+.plate.got{background:var(--pine);border-color:var(--pine-dark)}
+.plate.got .abbr{color:var(--marigold)}
+.plate.got .pname{color:#CFE3D8}
+.plate.got::after{content:"✓";position:absolute;left:6px;top:4px;color:var(--marigold);font-weight:900}
+
+/* ---------- Trivia ---------- */
+.pick-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.pick{
+  border:2px solid var(--line);background:#fff;border-radius:999px;
+  padding:8px 14px;font-weight:900;font-size:.82rem;cursor:pointer;
+}
+.pick.sel{background:var(--lake);border-color:var(--lake-dark);color:#fff}
+.qbox{background:var(--sand);border:2px solid var(--line);border-radius:12px;padding:14px;margin-top:10px}
+.qnum{font-family:var(--font-display);font-size:.62rem;color:var(--campfire);letter-spacing:.12em}
+.qtext{font-weight:900;font-size:1rem;margin:6px 0 10px}
+.opt{
+  display:block;width:100%;text-align:left;
+  background:#fff;border:2px solid var(--line);border-radius:10px;
+  padding:11px 12px;margin-bottom:8px;font-weight:800;font-size:.9rem;cursor:pointer;
+}
+.opt.correct{background:#DFF1E5;border-color:var(--pine)}
+.opt.wrong{background:#FBE3DA;border-color:var(--campfire)}
+.badges{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.badge{
+  width:74px;text-align:center;font-size:.58rem;font-weight:900;color:var(--ink-soft);
+}
+.badge .ring{
+  width:60px;height:60px;margin:0 auto 4px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:1.5rem;
+  background:#EDE4CC;border:3px dashed var(--line);filter:grayscale(1);opacity:.5;
+}
+.badge.earned .ring{
+  background:var(--marigold);border:3px solid var(--campfire);
+  filter:none;opacity:1;
+  animation:pop .4s;
+}
+@keyframes pop{0%{transform:scale(.4)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+/* ---------- Jokes ---------- */
+.jokestage{
+  background:var(--pine);color:#fff;border-radius:var(--radius);
+  padding:26px 18px;text-align:center;border:4px solid var(--pine-dark);
+  min-height:170px;display:flex;flex-direction:column;justify-content:center;gap:10px;
+}
+.jokestage .setup{font-weight:900;font-size:1.12rem}
+.jokestage .punch{font-family:var(--font-display);font-size:1rem;color:var(--marigold);display:none}
+.jokestage.revealed .punch{display:block;animation:pop .3s}
+.groan{font-size:.75rem;font-weight:800;color:var(--ink-soft);text-align:center;margin-top:8px}
+
+/* ---------- WYR ---------- */
+.wyr{
+  background:linear-gradient(135deg,var(--lake) 0 50%,var(--campfire) 50% 100%);
+  border-radius:var(--radius);padding:3px;
+}
+.wyr-in{background:var(--paper);border-radius:11px;padding:16px;text-align:center}
+.wyr-in .vs{font-family:var(--font-display);color:var(--campfire);font-size:.8rem;margin:8px 0}
+.wyr-in p{font-weight:900;font-size:1rem}
+
+/* ---------- Tips ---------- */
+.tip{display:flex;gap:12px;align-items:flex-start}
+.tip .tico{font-size:1.4rem;flex:none;margin-top:2px}
+.tip b{display:block;font-size:.95rem}
+.tip p{font-size:.88rem;color:var(--ink-soft);font-weight:600}
+
+.footer-note{
+  text-align:center;font-size:.72rem;font-weight:800;color:var(--ink-soft);
+  margin:24px 0 10px;
+}
+/* ---------- Bingo ---------- */
+.bingo{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.bcell{background:#fff;border:2px solid var(--line);border-radius:8px;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font-size:.5rem;font-weight:800;padding:2px;cursor:pointer;line-height:1.12;user-select:none}
+.bcell .be{font-size:1rem}
+.bcell.marked{background:var(--marigold);border-color:var(--campfire)}
+.bcell.free{background:var(--pine);color:#fff;border-color:var(--pine-dark);font-family:var(--font-display)}
+.bingo-banner{display:none;text-align:center;font-family:var(--font-display);color:var(--campfire);font-size:1.2rem;margin:0 0 8px}
+.bingo-banner.show{display:block;animation:pop .4s}
+
+/* ---------- Moose Dash ---------- */
+.moose-hud{display:flex;justify-content:space-between;font-family:var(--font-display);font-size:.75rem;color:var(--pine-dark);margin:8px 0}
+.moose-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.hole{background:#3E4742;border-radius:12px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:2.3rem;cursor:pointer;user-select:none;border:3px solid var(--pine-dark)}
+.hole:active{transform:scale(.95)}
+
+/* ---------- Scramble ---------- */
+.tiles{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:10px 0}
+.tile{background:var(--lake);color:#fff;font-family:var(--font-display);font-size:1rem;border-radius:8px;padding:8px 10px;box-shadow:0 2px 0 var(--lake-dark)}
+.scr-input{width:100%;border:2px solid var(--line);border-radius:10px;padding:11px;font-family:var(--font-body);font-weight:900;font-size:1rem;text-transform:uppercase;text-align:center;background:#fff}
+.scr-msg{text-align:center;font-weight:900;margin-top:8px;min-height:1.4em}
+.scr-prog{font-family:var(--font-display);font-size:.7rem;color:var(--pine-dark)}
+
+/* ---------- Mad Libs ---------- */
+.ml-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.ml-grid label{font-size:.66rem;font-weight:900;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:2px}
+.ml-grid input{width:100%;border:2px solid var(--line);border-radius:8px;padding:8px;font-family:var(--font-body);font-weight:800;font-size:.9rem;background:#fff}
+.ml-story{background:var(--sand);border:2px dashed var(--marigold);border-radius:12px;padding:14px;margin-top:10px;font-size:.95rem;font-weight:600;display:none}
+.ml-story.show{display:block;animation:pop .3s}
+.ml-story mark{background:var(--marigold);border-radius:4px;padding:0 3px;font-weight:900}
+
+/* ---------- Journal ---------- */
+.jday{border-bottom:1px dashed var(--line);padding:10px 0}
+.jday:last-child{border-bottom:0}
+.jtitle{font-weight:900;font-size:.9rem}
+.jtitle .jdate{color:var(--lake);font-size:.75rem}
+.jmoji{display:flex;gap:6px;margin:6px 0}
+.jmoji button{font-size:1.3rem;background:transparent;border:2px solid transparent;border-radius:8px;padding:2px 5px;cursor:pointer;filter:grayscale(1);opacity:.55}
+.jmoji button.sel{filter:none;opacity:1;border-color:var(--marigold);background:#FDF3DC}
+.jday input{width:100%;border:2px solid var(--line);border-radius:8px;padding:9px;font-family:var(--font-body);font-weight:700;font-size:.88rem;background:#fff}
+.saved-flash{color:var(--pine);font-size:.7rem;font-weight:900;margin-left:6px;opacity:0;transition:opacity .3s}
+.saved-flash.on{opacity:1}
+
+@media (prefers-reduced-motion: reduce){
+  *{animation:none!important;transition:none!important}
+  html{scroll-behavior:auto}
+}
+@media (min-width:520px){
+  .plates{grid-template-columns:repeat(4,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- Highway sign header -->
+  <div class="sign">
+    <div class="eyebrow">SUMMER 2026 &bull; 9 NIGHTS</div>
+    <h1>GREAT LAKES LOOP</h1>
+    <div class="crew">Backseat HQ &mdash; Crew: Vihaan 🥋 &amp; Vedant 🔢</div>
+    <div class="netbadge" id="netBadge">📡 Online</div>
+    <div class="arrow">🚐💨</div>
+    <div class="stats">
+      <div class="stat"><b>~1800</b><span>km driven</span></div>
+      <div class="stat"><b>4/5</b><span>Great Lakes</span></div>
+      <div class="stat"><b>2</b><span>ferries</span></div>
+      <div class="stat"><b>2</b><span>countries</span></div>
+    </div>
+  </div>
+
+  <!-- Road strip -->
+  <div class="roadbox">
+    <div class="roadlabel">TAP A STOP &mdash; THE RV DRIVES THERE</div>
+    <div class="road">
+      <div class="lane"></div>
+      <div class="rv" id="rv">🚐</div>
+      <div class="stops" id="stops"></div>
+    </div>
+  </div>
+
+  <!-- ROUTE -->
+  <section id="sec-route" class="show">
+    <div class="h2">THE ROUTE <em>// tap a stop to open it</em></div>
+    <div id="legs"></div>
+  </section>
+
+  <!-- GAMES -->
+  <section id="sec-games">
+    <div class="h2">🚙 LICENSE PLATE HUNT</div>
+    <div class="card">
+      <div class="score-pill">PLATE POINTS: <span id="plateScore">0</span></div>
+      <p style="font-size:.82rem;font-weight:700;color:var(--ink-soft);margin-bottom:10px">
+        Spot a plate, tap it to claim. Rare plates (red) are worth big points. Works on both sides of the border!</p>
+      <div class="plates" id="plates"></div>
+    </div>
+
+    <div class="h2">🧠 TRIP TRIVIA</div>
+    <div class="card">
+      <p style="font-weight:800;font-size:.85rem;margin-bottom:8px">1&#41; Who's playing?</p>
+      <div class="pick-row" id="playerRow"></div>
+      <p style="font-weight:800;font-size:.85rem;margin-bottom:8px">2&#41; Pick a stop:</p>
+      <div class="pick-row" id="quizStopRow"></div>
+      <div id="quizArea"></div>
+      <div class="h2" style="margin-top:16px">🏅 PATCH COLLECTION</div>
+      <p style="font-size:.8rem;font-weight:700;color:var(--ink-soft)">Score 4/5 or better on a stop's quiz to earn its patch.</p>
+      <p style="font-weight:900;font-size:.85rem;margin-top:8px">Vihaan 🥋</p>
+      <div class="badges" id="badgesVihaan"></div>
+      <p style="font-weight:900;font-size:.85rem;margin-top:10px">Vedant 🔢</p>
+      <div class="badges" id="badgesVedant"></div>
+    </div>
+
+    <div class="h2">🤔 WOULD YOU RATHER</div>
+    <div class="card">
+      <div class="wyr"><div class="wyr-in" id="wyrCard">
+        <p id="wyrA">Tap the button to draw a card!</p>
+        <div class="vs">— OR —</div>
+        <p id="wyrB">Everyone answers. No skipping. Defend your choice!</p>
+      </div></div>
+      <button class="btn btn-lake btn-block" style="margin-top:10px" onclick="nextWyr()">Draw a card 🎴</button>
+    </div>
+
+    <div class="h2">🎲 NO-SCREEN CLASSICS</div>
+    <div id="classics"></div>
+  </section>
+
+  <!-- JOKES -->
+  <section id="sec-jokes">
+    <div class="h2">😂 THE GROAN MACHINE</div>
+    <div class="card">
+      <div class="jokestage" id="jokeStage">
+        <div class="setup" id="jokeSetup">Warning: these jokes are Dad-strength.</div>
+        <div class="punch" id="jokePunch"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-gold btn-block" onclick="revealJoke()">Reveal punchline 🥁</button>
+        <button class="btn btn-pine btn-block" onclick="nextJoke()">Next joke ➡️</button>
+      </div>
+      <div class="groan">Jokes survived so far: <span id="jokeCount">0</span> &bull; Certified Dad-Approved™</div>
+    </div>
+  </section>
+
+  <!-- ARCADE -->
+  <section id="sec-arcade">
+    <div class="h2">🫎 MOOSE DASH <em>// 30-second showdown</em></div>
+    <div class="card">
+      <p style="font-size:.82rem;font-weight:700;color:var(--ink-soft);margin-bottom:8px">
+        Tap the moose 🫎 (+1 point). Do NOT tap the skunk 🦨 (−2 points). Fastest thumbs in the RV wins.</p>
+      <div class="pick-row" id="mooseWho"></div>
+      <div class="moose-hud"><span>TIME: <span id="mTime">30</span></span><span>SCORE: <span id="mScore">0</span></span></div>
+      <div class="moose-grid" id="mGrid"></div>
+      <button class="btn btn-gold btn-block" style="margin-top:10px" id="mStart" onclick="startMoose()">Start game 🫎</button>
+      <p style="text-align:center;font-weight:900;font-size:.85rem;margin-top:8px">High scores — Vihaan 🥋: <span id="hsV">0</span> &bull; Vedant 🔢: <span id="hsD">0</span></p>
+    </div>
+
+    <div class="h2">🎯 ROAD TRIP BINGO</div>
+    <div class="card">
+      <p style="font-size:.82rem;font-weight:700;color:var(--ink-soft);margin-bottom:8px">
+        Spot it out the window, tap the square. Five in a row = BINGO, and the winner picks the next snack stop.</p>
+      <div class="bingo-banner" id="bingoBanner">🎉 BINGO!!! 🎉</div>
+      <div class="bingo" id="bingoGrid"></div>
+      <button class="btn btn-ghost btn-block" style="margin-top:10px" onclick="newBingo()">Shuffle a new card 🔀</button>
+    </div>
+
+    <div class="h2">🔤 WORD SCRAMBLE</div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="scr-prog">SOLVED: <span id="scrProg">0</span>/12</span>
+        <button class="btn btn-ghost" style="padding:6px 12px;font-size:.78rem" onclick="scrNext()">Skip ↷</button>
+      </div>
+      <div class="tiles" id="scrTiles"></div>
+      <p style="text-align:center;font-size:.8rem;font-weight:800;color:var(--ink-soft)">Hint: <span id="scrHint"></span></p>
+      <input class="scr-input" id="scrInput" placeholder="TYPE YOUR GUESS" autocomplete="off" style="margin-top:8px">
+      <button class="btn btn-lake btn-block" style="margin-top:8px" onclick="scrCheck()">Check answer ✔</button>
+      <div class="scr-msg" id="scrMsg"></div>
+    </div>
+
+    <div class="h2">📝 MAD LIBS: RV EDITION</div>
+    <div class="card">
+      <p style="font-size:.82rem;font-weight:700;color:var(--ink-soft);margin-bottom:8px">
+        Fill the blanks WITHOUT reading the story first. Then read it out loud with full drama.</p>
+      <div class="pick-row" id="mlPick"></div>
+      <div class="ml-grid" id="mlInputs"></div>
+      <button class="btn btn-pine btn-block" onclick="mlGo()">Tell the story 📖</button>
+      <div class="ml-story" id="mlStory"></div>
+    </div>
+
+    <div class="h2">📓 TRIP JOURNAL</div>
+    <div class="card">
+      <p style="font-size:.82rem;font-weight:700;color:var(--ink-soft);margin-bottom:4px">
+        Rate each day and log the best moment. On the drive home, read them all out loud — best moment of the trip wins.</p>
+      <div id="journal"></div>
+    </div>
+  </section>
+
+  <!-- TIPS -->
+  <section id="sec-tips">
+    <div class="h2">🧭 RULES OF THE ROAD</div>
+    <div id="tips"></div>
+    <div class="footer-note">Built for the Great Lakes Loop &bull; July 2026 &bull; Drive safe, laugh loud 🚐</div>
+  </section>
+
+</div>
+
+<!-- Tab bar -->
+<nav class="tabbar">
+  <button class="tab active" data-sec="sec-route"><span class="ico">🗺️</span>Route</button>
+  <button class="tab" data-sec="sec-games"><span class="ico">🎮</span>Games</button>
+  <button class="tab" data-sec="sec-arcade"><span class="ico">🕹️</span>Arcade</button>
+  <button class="tab" data-sec="sec-jokes"><span class="ico">😂</span>Jokes</button>
+  <button class="tab" data-sec="sec-tips"><span class="ico">🧭</span>Tips</button>
+</nav>
+<script>
+/* ================= DATA ================= */
+const LEGS = [
+ {id:"tobermory", chip:"TOBERMORY", sub:"Ferry Day", emoji:"⛴️", title:"Tobermory & the Chi-Cheemaun",
+  facts:[
+   "Your ferry's name, <b>Chi-Cheemaun</b>, means <b>“Big Canoe”</b> in Ojibwe — and its whole front (the bow) lifts up like a giant mouth to swallow the RV.",
+   "Tobermory is called the <b>freshwater scuba-diving capital of the world</b> — more than 20 shipwrecks rest in the clear water of Fathom Five park.",
+   "The water is so clear you can see shipwrecks from a <b>glass-bottom boat</b> without getting wet.",
+   "Flowerpot Island's famous rock “flowerpots” were carved by thousands of years of crashing waves."
+  ],
+  challenge:"On the ferry: go to the top deck and count the sailboats you can see. First one to spot land on the other side wins.",
+  joke:{s:"Why was the ferry captain always calm?", p:"Because he knew how to keep everything ship-shape... water you expect?"}},
+ {id:"manitoulin", chip:"MANITOULIN", sub:"Spirit Island", emoji:"🏝️", title:"Manitoulin Island",
+  facts:[
+   "You're standing on the <b>largest freshwater island on Earth</b>.",
+   "Brain-bender: Treasure Island sits in Lake Mindemoya — that's an <b>island in a lake on an island in a lake</b>. Say it 5 times fast.",
+   "The name comes from the Anishinaabe word for <b>spirit</b> — this is sacred land to the Anishinaabe people, who have lived here for thousands of years.",
+   "The Cup and Saucer Trail cliffs are about <b>70 m tall</b> — like standing on a 20-storey building.",
+   "At Bridal Veil Falls you can walk <b>behind the waterfall</b>. Yes, you'll get sprayed."
+  ],
+  challenge:"At Little Current: watch the swing bridge — it rotates sideways to let boats through. Time how long a full swing takes.",
+  joke:{s:"What did the island say to the lake inside it?", p:"“Stop being so shallow — I've got an island inside YOU too!”"}},
+ {id:"soo", chip:"THE SOO", sub:"Twin Cities", emoji:"🚢", title:"Sault Ste. Marie",
+  facts:[
+   "Locals call it <b>“The Soo”</b> — and there's a twin city with the exact same name across the river in Michigan.",
+   "The Soo Locks are a <b>water elevator for ships</b>: giant 300-metre freighters get raised or lowered about 6.5 m between Lake Superior and Lake Huron.",
+   "Lake Superior is the <b>biggest freshwater lake on the planet</b> by area — it could hold the water of all the other Great Lakes combined, with room to spare.",
+   "People have gathered here at the rapids for thousands of years — it's one of the oldest continuously lived-in places in North America."
+  ],
+  challenge:"Freighter watch: spot a “laker” (giant cargo ship). Bonus point if you find its name with binoculars or a zoomed photo.",
+  joke:{s:"Why did the freighter do so well in school?", p:"It always got straight locks... I mean, it really rose to the occasion."}},
+ {id:"mackinac", chip:"MACKINAC", sub:"No cars allowed!", emoji:"🐴", title:"Mackinac Island",
+  facts:[
+   "Cars have been <b>banned since 1898</b>. Everyone gets around by horse, bike, or feet — even the police and the garbage “trucks” (horse wagons).",
+   "Say it right: <b>“MACK-in-aw.”</b> Now you're basically a local.",
+   "M-185 circles the island — the only highway in the USA where <b>cars are illegal</b>. It's 13 km around: perfect bike loop.",
+   "The Grand Hotel has the <b>longest porch in the world</b> — about two football fields long.",
+   "The island is famous for fudge. Tourists are literally nicknamed <b>“fudgies.”</b> Congratulations on your new title."
+  ],
+  challenge:"Count the horses you see. Guess before you land: over or under 40? (About 600 horses work the island in summer.)",
+  joke:{s:"What do you call your horse neighbour on Mackinac?", p:"Your NEIGH-bour. He's very stable."}},
+ {id:"dunes", chip:"DUNES", sub:"Sand mountains", emoji:"🏜️", title:"Sleeping Bear Dunes",
+  facts:[
+   "The Ojibwe legend: a mother bear and two cubs swam across Lake Michigan to escape a fire. The cubs became the <b>Manitou Islands</b>; the mother is the dune, still waiting on shore.",
+   "The tallest bluffs tower about <b>140 m above Lake Michigan</b> — higher than a 40-storey building.",
+   "Good Morning America viewers once voted this the <b>most beautiful place in America</b>.",
+   "The Dune Climb is brutal going up... and the <b>best free ride ever</b> coming down. Big lunging moon-steps work best."
+  ],
+  challenge:"Race Dad up the Dune Climb. (Spoiler: sand always wins.) Then find the Lake Michigan overlook and look for the Manitou Islands — the two cubs.",
+  joke:{s:"What did one sand dune say to the other?", p:"“I dune know about you, but I'm feeling a little gritty today.”"}},
+ {id:"pelee", chip:"PT PELEE", sub:"Canada's south tip", emoji:"🦋", title:"Point Pelee",
+  facts:[
+   "You're at the <b>southernmost point of mainland Canada</b> — the same latitude as Rome, Italy. Yes, really.",
+   "The sandy Tip <b>changes shape every single day</b> as waves push the sand around. The Tip you see is one-of-a-kind.",
+   "It's one of Canada's smallest national parks but a bird superstar — <b>390+ species</b> have been spotted here.",
+   "In fall, monarch butterflies gather here in clouds before flying across Lake Erie — all the way to <b>Mexico</b>.",
+   "“Pelée” is French for <b>bald</b> — early explorers named it for the bare, sandy point."
+  ],
+  challenge:"Walk the marsh boardwalk and count turtles. Then stand at the very Tip — one foot is now the most southern kid in mainland Canada.",
+  joke:{s:"What do monarch butterflies study in school?", p:"MOTH-ematics. (Vedant, this one's yours.)"}}
+];
+
+const PLATES = [
+ {a:"ON",n:"Ontario",p:1},{a:"MI",n:"Michigan",p:1},{a:"QC",n:"Quebec",p:2},
+ {a:"OH",n:"Ohio",p:2},{a:"NY",n:"New York",p:2},{a:"IL",n:"Illinois",p:2},
+ {a:"IN",n:"Indiana",p:2},{a:"WI",n:"Wisconsin",p:2},{a:"PA",n:"Pennsylvania",p:2},
+ {a:"MN",n:"Minnesota",p:3},{a:"MB",n:"Manitoba",p:3},{a:"FL",n:"Florida",p:3},
+ {a:"AB",n:"Alberta",p:5,r:1},{a:"BC",n:"British Columbia",p:5,r:1},{a:"TX",n:"Texas",p:5,r:1},
+ {a:"CA",n:"California",p:5,r:1},{a:"NS",n:"Nova Scotia",p:5,r:1},{a:"YT",n:"Yukon",p:10,r:1}
+];
+
+const QUIZ = {
+ tobermory:[
+  {q:"What does “Chi-Cheemaun” mean?",o:["Big Canoe","Fast Water","Great Lake"],c:0},
+  {q:"Tobermory is world-famous for what, underwater?",o:["Shipwrecks","Sharks","Volcanoes"],c:0},
+  {q:"What carved the rock “flowerpots” on Flowerpot Island?",o:["Waves, over thousands of years","Dinosaurs","Giant drills"],c:0},
+  {q:"Which lake is the ferry crossing?",o:["Lake Huron (Georgian Bay)","Lake Erie","Lake Superior"],c:0},
+  {q:"How does the RV get onto the Chi-Cheemaun?",o:["Through the lift-up bow (front)","By crane","It floats on beside it"],c:0}],
+ manitoulin:[
+  {q:"Manitoulin is the world's largest what?",o:["Freshwater island","Sandbar","Peninsula"],c:0},
+  {q:"What's the brain-bender about Treasure Island?",o:["Island in a lake on an island in a lake","It disappears at night","It's made of glass"],c:0},
+  {q:"“Manitoulin” relates to which Anishinaabe word?",o:["Spirit","Turtle","Thunder"],c:0},
+  {q:"The Cup and Saucer cliffs are about as tall as...",o:["A 20-storey building","A basketball hoop","The CN Tower"],c:0},
+  {q:"What does the Little Current bridge do for boats?",o:["Swings sideways to open","Sinks underwater","Launches them"],c:0}],
+ soo:[
+  {q:"What do the Soo Locks do?",o:["Lift ships between lakes, like an elevator","Lock up pirates","Make waves for surfing"],c:0},
+  {q:"Which is the largest freshwater lake on Earth by area?",o:["Lake Superior","Lake Ontario","Lake Michigan"],c:0},
+  {q:"What's Sault Ste. Marie's nickname?",o:["The Soo","The Sault-y City","Lockville"],c:0},
+  {q:"What's directly across the river?",o:["A US city with the same name","Toronto","The ocean"],c:0},
+  {q:"About how far do the locks raise or lower a ship?",o:["About 6.5 metres","200 metres","2 centimetres"],c:0}],
+ mackinac:[
+  {q:"What has been banned on Mackinac Island since 1898?",o:["Cars","Bicycles","Fudge"],c:0},
+  {q:"How do you pronounce “Mackinac”?",o:["MACK-in-aw","MACK-in-ack","muh-KEEN-ak"],c:0},
+  {q:"Tourists on the island are nicknamed...",o:["Fudgies","Ferry-folk","Islanders"],c:0},
+  {q:"What's special about highway M-185?",o:["Only US highway where cars are banned","It's underwater","It's the world's longest"],c:0},
+  {q:"The Grand Hotel has the world's longest what?",o:["Porch","Pool","Pizza oven"],c:0}],
+ dunes:[
+  {q:"In the Ojibwe legend, the two Manitou Islands are...",o:["The bear cubs","Two canoes","Sleeping giants"],c:0},
+  {q:"Which Great Lake do the dunes tower over?",o:["Lake Michigan","Lake Erie","Lake Huron"],c:0},
+  {q:"About how high are the tallest bluffs above the water?",o:["140 m — like a 40-storey building","4 m","2 km"],c:0},
+  {q:"What did Good Morning America viewers vote this place?",o:["Most beautiful place in America","Sandiest place on Earth","Best beach for cars"],c:0},
+  {q:"Why shouldn't you run down the big bluff to the lake?",o:["5 minutes down, 2 exhausting hours back up","Quicksand","Bears at the bottom"],c:0}],
+ pelee:[
+  {q:"Point Pelee is the southernmost point of...",o:["Mainland Canada","North America","Ontario's north"],c:0},
+  {q:"Which famous European city shares Pelee's latitude?",o:["Rome","London","Oslo"],c:0},
+  {q:"Which insect famously gathers here before crossing Lake Erie?",o:["Monarch butterflies","Fireflies","Dragonflies"],c:0},
+  {q:"“Pelée” is French for...",o:["Bald","Pointy","Sandy"],c:0},
+  {q:"What happens to the Tip every day?",o:["Waves reshape the sand, so it changes","It glows","It grows 1 km"],c:0}]
+};
+
+const JOKES = [
+ {s:"What did Lake Huron say to Lake Michigan?",p:"Nothing. It just waved. 🌊"},
+ {s:"Why can't you trust the ocean?",p:"It's way too salty. That's why we do the Great Lakes — they're fresh!"},
+ {s:"Why did the bicycle fall over on Mackinac Island?",p:"It was two-tired. 🚲"},
+ {s:"What do you call a bear with no teeth?",p:"A gummy bear. (Don't worry, the Sleeping Bear is just a dune.)"},
+ {s:"Why do seagulls fly over the sea?",p:"Because if they flew over the bay, they'd be bay-gulls. 🥯"},
+ {s:"What's an RV's favourite music?",p:"Anything with a good camp-fire beat. DJ Vihaan, take it away. 🎧"},
+ {s:"Why was the math book sad on the road trip?",p:"Too many problems. Vedant could've solved them all. 🔢"},
+ {s:"Why did the karate kid love the ferry ride?",p:"The waves were extra CHOP-py. 🥋"},
+ {s:"How do the Great Lakes greet each other?",p:"“Water you up to?”"},
+ {s:"What did the traffic light say to the RV?",p:"“Don't look — I'm changing!” 🚦"},
+ {s:"Why don't campfires ever gossip?",p:"They don't want the story to get out of control."},
+ {s:"What's a lighthouse's favourite subject?",p:"Current events. 💡"},
+ {s:"Why did the horse on Mackinac get a job?",p:"He wanted a stable income. 🐴"},
+ {s:"What do you call cheese at the border crossing?",p:"Nacho cheese — declare it anyway."},
+ {s:"How does a dune apologize?",p:"“I'm sandy about that.”"},
+ {s:"Why did the s'more go to school?",p:"To become a little s'more-ter. 🔥"},
+ {s:"What's the quietest game in the RV?",p:"The one Dad invented 10 minutes into the drive."},
+ {s:"Why did the butterfly never get lost?",p:"It always went with its gut... erfly instinct. 🦋"},
+ {s:"What did the GPS say after 9 days on the road?",p:"“You have arrived... at maximum family bonding.”"},
+ {s:"Why do freighters make terrible comedians?",p:"Their delivery takes weeks. 🚢"}
+];
+
+const WYR = [
+ ["Ride a horse taxi around Mackinac Island 🐴","Bike the whole 13 km island loop 🚲"],
+ ["Unlimited Mackinac fudge for the trip 🍫","Unlimited campfire s'mores for the trip 🔥"],
+ ["Walk behind Bridal Veil Falls and get soaked 💦","Climb the Cup and Saucer cliffs 🧗"],
+ ["Be captain of the Chi-Cheemaun for a day ⛴️","Drive the RV for a day (when you're older!) 🚐"],
+ ["Run down the Dune Climb 10 times 🏜️","Hike UP from the lake just once 😅"],
+ ["Spot a bear from the RV window 🐻","Spot a moose from the RV window 🫎"],
+ ["Speak ONLY in dad jokes for a whole day 😂","Laugh at every single one of Dad's jokes (even the worst)"],
+ ["Campfire hot dogs every meal 🌭","Trail mix every meal 🥜"],
+ ["A pet monarch butterfly 🦋","A pet seagull that follows the RV 🐦"],
+ ["Get stranded one night on Flowerpot Island 🏝️","Get stuck one night on the ferry ⛴️"],
+ ["DJ a dance party for 600 Mackinac horses 🎧🐴","Teach a karate class to seagulls 🥋🐦"],
+ ["Find a shipwreck full of treasure 🏴‍☠️","Find a secret cave full of crystals 💎"],
+ ["Rain on every driving day 🌧️","Mosquitoes at every campfire 🦟"],
+ ["No screens for the whole trip 📵","No snacks for the whole trip 😱"],
+ ["Sleep on the RV roof under the stars ✨","Sleep in a hammock between two trees 🌲"],
+ ["Swim in all 4 Great Lakes in one day 🏊","Stand at the Tip of Canada for a whole hour 🇨🇦"]
+];
+
+const CLASSICS = [
+ {t:"The Alphabet Game 🔤",d:"Find the letters A to Z, in order, on road signs and plates outside your OWN window. First to Z wins. Q and Z are the bosses — a Quebec plate is gold."},
+ {t:"20 Questions ❓",d:"One player thinks of something from THIS trip (ferry, fudge, horse...). Everyone else gets 20 yes/no questions to crack it."},
+ {t:"Cows On My Side 🐄",d:"See cows on your side? Yell “Cows on my side!” — 1 point per sighting. Pass a cemetery and yell “Ghost cow!” first? The other side loses ALL points."},
+ {t:"Story Chain 📖",d:"Build a story one sentence at a time, going around the RV. Rule: every third sentence must include something you can see out the window."},
+ {t:"Categories: Name 5 ⏱️",d:"Pick a category (Great Lakes animals, ferry things, fudge flavours). Player has 10 seconds to name 5. Judges: everyone else."},
+ {t:"Two Truths & a Lie 🕵️",d:"About the day's stop! Say 3 “facts” — one is fake. Steal material from the Route tab... if you dare."}
+];
+
+const TIPS = [
+ {i:"💺",t:"Rolling = buckled",d:"Even in an RV with a couch and a table, seatbelts stay on while the wheels are turning. House rules are road rules."},
+ {i:"🚽",t:"The RV toilet holds grudges",d:"Nothing goes in except the official stuff. No toys, no wrappers, no experiments. Trust us — nobody wants THAT campground story."},
+ {i:"⛴️",t:"Ferry days",d:"We board early through the giant bow door. Best spots: top deck for wind-in-your-face, and watch for the moment land disappears in every direction."},
+ {i:"🛂",t:"Border crossing = serious mode",d:"Passports out, hats and sunglasses off, let Dad do the talking. It is the ONE place on Earth where dad jokes are officially banned."},
+ {i:"🏜️",t:"The dune rule",d:"Never run down the big bluff to Lake Michigan. It's 5 minutes down and 2 exhausting hours back up. The Dune Climb is the fun one — go wild there."},
+ {i:"🐴",t:"Horses rule Mackinac",d:"Horses always have right of way. Want to pet one? Ask the driver first. And watch where you step... 600 horses, you do the math, Vedant."},
+ {i:"🤫",t:"Campground quiet hours",d:"After about 10 pm, campgrounds switch to whisper mode. Flashlight tag ends, owl-listening begins."},
+ {i:"🎒",t:"Leave no trace",d:"Whatever we pack in, we pack out. Check for ticks after hikes (socks over pants = pro move, fashion disaster, worth it)."},
+ {i:"💧",t:"Water before whining",d:"Fill your bottle before every hike. Sunscreen goes on BEFORE the beach, not after you turn tomato-coloured."},
+ {i:"🗺️",t:"Navigator of the day",d:"Take turns being co-pilot: track the route, call out the next town, and pick one fact from this app to quiz the family at dinner."}
+];
+
+/* ================= STATE + STORAGE ================= */
+let state = {plates:[], badges:{vihaan:[], vedant:[]}, jokesHeard:0,
+  bingo:{items:[],marks:[]}, moose:{vihaan:0,vedant:0}, scramble:[], journal:{}};
+const SKEY = "gll-trip-2026";
+// Uses Claude's artifact storage when running inside claude.ai; falls back to the
+// browser's own localStorage when opened as a standalone file (e.g. on a tablet).
+const hasClaudeStorage = typeof window.storage !== "undefined";
+async function loadState(){
+  try{
+    if(hasClaudeStorage){
+      const r = await window.storage.get(SKEY);
+      if(r && r.value) state = Object.assign(state, JSON.parse(r.value));
+    } else {
+      const raw = localStorage.getItem(SKEY);
+      if(raw) state = Object.assign(state, JSON.parse(raw));
+    }
+  }catch(e){}
+  renderAll();
+}
+async function saveState(){
+  try{
+    if(hasClaudeStorage) await window.storage.set(SKEY, JSON.stringify(state));
+    else localStorage.setItem(SKEY, JSON.stringify(state));
+  }catch(e){}
+}
+
+/* ================= ROAD STRIP ================= */
+const stopsEl = document.getElementById("stops");
+LEGS.forEach((l,i)=>{
+  const b=document.createElement("button");
+  b.className="stop-chip"; b.innerHTML = l.chip+"<small>Stop "+(i+1)+"</small>";
+  b.onclick=()=>{ driveTo(i); openLeg(l.id,true); showSec("sec-route"); };
+  stopsEl.appendChild(b);
+});
+const home=document.createElement("button");
+home.className="stop-chip"; home.innerHTML="HOME<small>🏠 Base Camp</small>";
+home.onclick=()=>driveTo(LEGS.length);
+stopsEl.appendChild(home);
+function driveTo(i){
+  const chips=[...stopsEl.children];
+  chips.forEach((c,ci)=>c.classList.toggle("active",ci===i));
+  const c=chips[i];
+  document.getElementById("rv").style.left=(c.offsetLeft + c.offsetWidth/2 - 14)+"px";
+}
+
+/* ================= LEG CARDS ================= */
+const legsEl=document.getElementById("legs");
+LEGS.forEach((l,i)=>{
+  const d=document.createElement("div");
+  d.className="card leg"; d.id="leg-"+l.id;
+  d.innerHTML =
+   '<div class="leg-head" onclick="toggleLeg(\''+l.id+'\')">'+
+     '<div class="leg-emoji">'+l.emoji+'</div>'+
+     '<div><div class="leg-title">'+l.title+'</div><div class="leg-sub">Stop '+(i+1)+' &bull; '+l.sub+'</div></div>'+
+     '<div class="leg-caret">›</div></div>'+
+   '<div class="leg-body">'+
+     '<ul class="facts">'+l.facts.map(f=>"<li>"+f+"</li>").join("")+'</ul>'+
+     '<div class="mini challenge"><b>SPOT-IT CHALLENGE</b>'+l.challenge+'</div>'+
+     '<div class="mini legjoke" onclick="this.classList.add(\'revealed\')"><b>STOP JOKE</b>'+l.joke.s+
+       '<span class="tapme"> (tap for punchline)</span><span class="punch">'+l.joke.p+'</span></div>'+
+   '</div>';
+  legsEl.appendChild(d);
+});
+function toggleLeg(id){ document.getElementById("leg-"+id).classList.toggle("open"); }
+function openLeg(id,scroll){
+  document.querySelectorAll(".leg").forEach(e=>e.classList.remove("open"));
+  const el=document.getElementById("leg-"+id); el.classList.add("open");
+  if(scroll) setTimeout(()=>el.scrollIntoView({behavior:"smooth",block:"start"}),80);
+}
+
+/* ================= TABS ================= */
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick=()=>showSec(t.dataset.sec);
+});
+function showSec(id){
+  document.querySelectorAll("section").forEach(s=>s.classList.toggle("show",s.id===id));
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.sec===id));
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ================= PLATES ================= */
+const platesEl=document.getElementById("plates");
+function renderPlates(){
+  platesEl.innerHTML="";
+  let score=0;
+  PLATES.forEach(p=>{
+    const got=state.plates.includes(p.a);
+    if(got) score+=p.p;
+    const d=document.createElement("div");
+    d.className="plate"+(p.r?" rare":"")+(got?" got":"");
+    d.innerHTML='<span class="pts">'+p.p+' pt'+(p.p>1?"s":"")+'</span><div class="abbr">'+p.a+'</div><span class="pname">'+p.n+'</span>';
+    d.onclick=()=>{
+      const ix=state.plates.indexOf(p.a);
+      if(ix>-1) state.plates.splice(ix,1); else state.plates.push(p.a);
+      saveState(); renderPlates();
+    };
+    platesEl.appendChild(d);
+  });
+  document.getElementById("plateScore").textContent=score;
+}
+
+/* ================= TRIVIA ================= */
+let player=null, quizStop=null, qIdx=0, qScore=0, qLocked=false;
+const playerRow=document.getElementById("playerRow");
+[["vihaan","Vihaan 🥋"],["vedant","Vedant 🔢"]].forEach(([id,label])=>{
+  const b=document.createElement("button"); b.className="pick"; b.textContent=label;
+  b.onclick=()=>{ player=id; [...playerRow.children].forEach(c=>c.classList.toggle("sel",c===b)); maybeStartQuiz(); };
+  playerRow.appendChild(b);
+});
+const quizStopRow=document.getElementById("quizStopRow");
+LEGS.forEach(l=>{
+  const b=document.createElement("button"); b.className="pick"; b.textContent=l.emoji+" "+l.chip;
+  b.onclick=()=>{ quizStop=l.id; [...quizStopRow.children].forEach(c=>c.classList.toggle("sel",c===b)); maybeStartQuiz(); };
+  quizStopRow.appendChild(b);
+});
+function maybeStartQuiz(){
+  const area=document.getElementById("quizArea");
+  if(!player||!quizStop){ area.innerHTML=""; return; }
+  qIdx=0; qScore=0; renderQ();
+}
+function renderQ(){
+  const area=document.getElementById("quizArea");
+  const qs=QUIZ[quizStop];
+  if(qIdx>=qs.length){
+    const passed=qScore>=4;
+    if(passed && !state.badges[player].includes(quizStop)){
+      state.badges[player].push(quizStop); saveState();
+    }
+    area.innerHTML='<div class="qbox" style="text-align:center">'+
+      '<div class="qnum">FINAL SCORE</div>'+
+      '<div class="qtext" style="font-size:1.4rem">'+qScore+' / '+qs.length+'</div>'+
+      '<p style="font-weight:800;margin-bottom:10px">'+(passed?"🏅 PATCH EARNED! Check the collection below.":"So close! Read the Route facts and try again.")+'</p>'+
+      '<button class="btn btn-gold" onclick="maybeStartQuiz()">Play again 🔁</button></div>';
+    renderBadges();
+    return;
+  }
+  const q=qs[qIdx];
+  const opts=q.o.map((t,i)=>({t,ok:i===q.c})).sort(()=>Math.random()-.5);
+  qLocked=false;
+  area.innerHTML='<div class="qbox"><div class="qnum">QUESTION '+(qIdx+1)+' OF '+qs.length+' &bull; SCORE '+qScore+'</div>'+
+    '<div class="qtext">'+q.q+'</div>'+
+    opts.map(o=>'<button class="opt" data-ok="'+(o.ok?1:0)+'">'+o.t+'</button>').join("")+'</div>';
+  area.querySelectorAll(".opt").forEach(b=>{
+    b.onclick=()=>{
+      if(qLocked) return; qLocked=true;
+      const ok=b.dataset.ok==="1";
+      if(ok){ qScore++; b.classList.add("correct"); }
+      else{ b.classList.add("wrong"); area.querySelector('.opt[data-ok="1"]').classList.add("correct"); }
+      setTimeout(()=>{ qIdx++; renderQ(); }, ok?650:1300);
+    };
+  });
+}
+function renderBadges(){
+  [["vihaan","badgesVihaan"],["vedant","badgesVedant"]].forEach(([pl,elId])=>{
+    const el=document.getElementById(elId); el.innerHTML="";
+    LEGS.forEach(l=>{
+      const earned=state.badges[pl].includes(l.id);
+      const d=document.createElement("div");
+      d.className="badge"+(earned?" earned":"");
+      d.innerHTML='<div class="ring">'+l.emoji+'</div>'+l.chip;
+      el.appendChild(d);
+    });
+  });
+}
+
+/* ================= JOKES ================= */
+let jokeOrder=[...JOKES].sort(()=>Math.random()-.5), jokeIx=-1;
+function nextJoke(){
+  jokeIx=(jokeIx+1)%jokeOrder.length;
+  const j=jokeOrder[jokeIx];
+  const st=document.getElementById("jokeStage");
+  st.classList.remove("revealed");
+  document.getElementById("jokeSetup").textContent=j.s;
+  document.getElementById("jokePunch").textContent=j.p;
+}
+function revealJoke(){
+  if(jokeIx<0){ nextJoke(); return; }
+  const st=document.getElementById("jokeStage");
+  if(!st.classList.contains("revealed")){
+    st.classList.add("revealed");
+    state.jokesHeard++; saveState();
+    document.getElementById("jokeCount").textContent=state.jokesHeard;
+  }
+}
+
+/* ================= WYR ================= */
+let wyrOrder=[...WYR].sort(()=>Math.random()-.5), wyrIx=-1;
+function nextWyr(){
+  wyrIx=(wyrIx+1)%wyrOrder.length;
+  document.getElementById("wyrA").textContent="Would you rather... "+wyrOrder[wyrIx][0];
+  document.getElementById("wyrB").textContent=wyrOrder[wyrIx][1]+"?";
+}
+
+/* ================= CLASSICS + TIPS ================= */
+document.getElementById("classics").innerHTML = CLASSICS.map(c=>
+ '<div class="card"><b style="font-size:.98rem">'+c.t+'</b><p style="font-size:.88rem;color:var(--ink-soft);font-weight:600;margin-top:4px">'+c.d+'</p></div>').join("");
+document.getElementById("tips").innerHTML = TIPS.map(t=>
+ '<div class="card tip"><div class="tico">'+t.i+'</div><div><b>'+t.t+'</b><p>'+t.d+'</p></div></div>').join("");
+
+/* ================= ROAD TRIP BINGO ================= */
+const BINGO_POOL = [
+ ["🛖","Red barn"],["💨","Wind turbine"],["🗼","Lighthouse"],["🏍️","Motorcycle"],["🐄","Cow"],
+ ["🐴","Horse"],["🚤","Boat on a trailer"],["🚂","Train"],["☕","Tim Hortons"],["🗄️","Water tower"],
+ ["🇨🇦","Canadian flag"],["🇺🇸","US flag"],["🦌","Deer crossing sign"],["🫎","Moose sign"],["🌉","Big bridge"],
+ ["🚌","School bus"],["🚓","Police car"],["🚐","RV bigger than ours"],["👋","Someone waving"],["🐕","Dog in a car window"],
+ ["🟡","Yellow car"],["🚗","Convertible"],["🚜","Tractor"],["🌾","Hay bales"],["🐦","Seagull"],
+ ["⛴️","A ferry"],["🛶","Kayak on a roof"],["⛽","Gas station"],["🍦","Ice cream shop"],["🌽","Corn field"],
+ ["🚴","Cyclist"],["🏕️","Camper trailer"],["💯","Speed limit 100"],["🚧","Construction cones"],["🅿️","Rest area sign"],
+ ["🚙","Antique car"],["🌮","Food truck"],["🐿️","Squirrel"],["✈️","Airplane in the sky"],["🌈","Rainbow (lucky!)"]
+];
+function genBingoCard(){
+  const pool=[...BINGO_POOL].sort(()=>Math.random()-.5).slice(0,24);
+  state.bingo={items:pool.map(p=>p[0]+"|"+p[1]), marks:[]};
+}
+function newBingo(){
+  if(state.bingo.marks.length && !confirm("Shuffle a new card? This clears your marks.")) return;
+  genBingoCard(); saveState(); renderBingo();
+}
+function renderBingo(){
+  const g=document.getElementById("bingoGrid"); if(!g) return;
+  g.innerHTML="";
+  for(let i=0;i<25;i++){
+    const d=document.createElement("div");
+    if(i===12){ d.className="bcell free"; d.innerHTML='<span class="be">🚐</span>FREE'; }
+    else{
+      const ix=i<12?i:i-1;
+      const parts=state.bingo.items[ix].split("|");
+      const marked=state.bingo.marks.includes(ix);
+      d.className="bcell"+(marked?" marked":"");
+      d.innerHTML='<span class="be">'+parts[0]+'</span>'+parts[1];
+      d.onclick=()=>{
+        const m=state.bingo.marks, j=m.indexOf(ix);
+        if(j>-1) m.splice(j,1); else m.push(ix);
+        saveState(); renderBingo();
+      };
+    }
+    g.appendChild(d);
+  }
+  document.getElementById("bingoBanner").classList.toggle("show", hasBingo());
+}
+function hasBingo(){
+  const on=i=> i===12 || state.bingo.marks.includes(i<12?i:i-1);
+  const lines=[];
+  for(let r=0;r<5;r++){
+    lines.push([0,1,2,3,4].map(c=>r*5+c));
+    lines.push([0,1,2,3,4].map(c=>c*5+r));
+  }
+  lines.push([0,6,12,18,24]); lines.push([4,8,12,16,20]);
+  return lines.some(line=>line.every(on));
+}
+
+/* ================= MOOSE DASH ================= */
+let mPlayer="vihaan", mRun=false, mScore=0, mLeft=30, mClock=null, mPopT=null, mCell=-1, mKind="";
+const mGrid=document.getElementById("mGrid");
+for(let i=0;i<9;i++){
+  const h=document.createElement("div");
+  h.className="hole"; h.dataset.ix=i;
+  h.onclick=()=>hitHole(i);
+  mGrid.appendChild(h);
+}
+const mooseWho=document.getElementById("mooseWho");
+[["vihaan","Vihaan 🥋"],["vedant","Vedant 🔢"]].forEach(([id,label],k)=>{
+  const b=document.createElement("button");
+  b.className="pick"+(k===0?" sel":""); b.textContent=label;
+  b.onclick=()=>{ if(mRun) return; mPlayer=id; [...mooseWho.children].forEach(c=>c.classList.toggle("sel",c===b)); };
+  mooseWho.appendChild(b);
+});
+function startMoose(){
+  if(mRun) return;
+  mRun=true; mScore=0; mLeft=30;
+  document.getElementById("mScore").textContent=0;
+  document.getElementById("mTime").textContent=30;
+  document.getElementById("mStart").textContent="Go go go!!!";
+  mClock=setInterval(()=>{
+    mLeft--; document.getElementById("mTime").textContent=mLeft;
+    if(mLeft<=0) endMoose();
+  },1000);
+  popNext();
+}
+function popNext(){
+  clearHole();
+  mCell=Math.floor(Math.random()*9);
+  mKind=Math.random()<0.22?"🦨":"🫎";
+  mGrid.children[mCell].textContent=mKind;
+  const delay=Math.max(430, 850 - (30-mLeft)*14);
+  mPopT=setTimeout(popNext, delay);
+}
+function clearHole(){
+  if(mCell>-1) mGrid.children[mCell].textContent="";
+  mCell=-1;
+}
+function hitHole(i){
+  if(!mRun || i!==mCell) return;
+  mScore += (mKind==="🫎") ? 1 : -2;
+  if(mScore<0) mScore=0;
+  document.getElementById("mScore").textContent=mScore;
+  clearHole();
+}
+function endMoose(){
+  mRun=false;
+  clearInterval(mClock); clearTimeout(mPopT); clearHole();
+  document.getElementById("mStart").textContent="Play again 🫎";
+  if(mScore > (state.moose[mPlayer]||0)){
+    state.moose[mPlayer]=mScore; saveState();
+    alert("🏆 NEW HIGH SCORE for "+(mPlayer==="vihaan"?"Vihaan":"Vedant")+": "+mScore+"!");
+  }
+  renderMooseHS();
+}
+function renderMooseHS(){
+  document.getElementById("hsV").textContent=state.moose.vihaan||0;
+  document.getElementById("hsD").textContent=state.moose.vedant||0;
+}
+
+/* ================= WORD SCRAMBLE ================= */
+const SCRAMBLE=[
+ ["FERRY","The big boat that carries the RV"],
+ ["FUDGE","Mackinac's famous sweet treat"],
+ ["MACKINAC","The island with zero cars"],
+ ["DUNES","Giant hills made of sand"],
+ ["MONARCH","Orange butterfly that flies to Mexico"],
+ ["LIGHTHOUSE","It warns ships at night"],
+ ["CAMPFIRE","Where s'mores are born"],
+ ["SUPERIOR","The biggest Great Lake of all"],
+ ["ISLAND","Land with water all the way around"],
+ ["HORSES","Mackinac's taxi drivers"],
+ ["BOARDWALK","Wooden path over the marsh at Pelee"],
+ ["TOBERMORY","The town where our ferry leaves from"]
+];
+let scrIx=0;
+function scrUnsolved(){ return SCRAMBLE.map((w,i)=>i).filter(i=>!state.scramble.includes(SCRAMBLE[i][0])); }
+function scrShuffleWord(w){
+  let s=w;
+  for(let t=0;t<10 && s===w;t++) s=w.split("").sort(()=>Math.random()-.5).join("");
+  return s;
+}
+function scrRender(){
+  const tiles=document.getElementById("scrTiles"); if(!tiles) return;
+  document.getElementById("scrProg").textContent=state.scramble.length;
+  const left=scrUnsolved();
+  if(!left.length){
+    tiles.innerHTML='<span class="tile">🏆</span><span class="tile">🏆</span><span class="tile">🏆</span>';
+    document.getElementById("scrHint").textContent="You solved ALL 12! Word champions.";
+    document.getElementById("scrInput").style.display="none";
+    return;
+  }
+  if(!left.includes(scrIx)) scrIx=left[0];
+  const w=SCRAMBLE[scrIx];
+  tiles.innerHTML=scrShuffleWord(w[0]).split("").map(l=>'<span class="tile">'+l+'</span>').join("");
+  document.getElementById("scrHint").textContent=w[1];
+  document.getElementById("scrInput").value="";
+  document.getElementById("scrMsg").textContent="";
+}
+function scrCheck(){
+  const guess=document.getElementById("scrInput").value.trim().toUpperCase();
+  const w=SCRAMBLE[scrIx][0];
+  const msg=document.getElementById("scrMsg");
+  if(guess===w){
+    state.scramble.push(w); saveState();
+    msg.textContent="✅ NAILED IT! It's "+w+"!";
+    setTimeout(scrRender, 900);
+  } else {
+    msg.textContent="❌ Not quite — read the hint again!";
+  }
+}
+function scrNext(){
+  const left=scrUnsolved();
+  if(left.length<2) return;
+  scrIx=left[(left.indexOf(scrIx)+1)%left.length];
+  scrRender();
+}
+document.getElementById("scrInput").addEventListener("keydown",e=>{ if(e.key==="Enter") scrCheck(); });
+
+/* ================= MAD LIBS ================= */
+const MADLIBS=[
+ {t:"⛴️ The Ferry Fiasco",
+  b:["Adjective","Animal (plural)","Silly made-up word","A food","Verb ending in -ING","Someone in this RV","Number"],
+  s:"Today we drove our {0} RV onto the Chi-Cheemaun. Halfway across the lake, {6} {1} climbed aboard and started {4} on the top deck. The captain grabbed the microphone and yelled \"{2}!!!\" then offered them {3} to leave the ship. It totally worked — but now {5} wants to keep one as a pet. When we docked, the whole ferry clapped. Final review: {6} out of 10, would sail again."},
+ {t:"🐴 Mackinac Mayhem",
+  b:["Someone in this RV","Adjective","Verb","A dessert","An animal","Loud sound effect","Body part"],
+  s:"On Mackinac Island, {0} rented a very {1} bicycle and tried to {2} around the entire island without stopping. Halfway around, a {4} wearing a tiny hat blocked the road and shouted \"{5}!\" — apparently that's how tolls work here. We paid the toll in {3}. By the end of the loop everybody's {6} was sore, so we ate fudge until the ferry came back."},
+ {t:"🏜️ Dune Disaster",
+  b:["Adjective","Verb ending in -ED","Famous person or superhero","Weather word","Silly battle cry","Big number","Objects (plural)"],
+  s:"At Sleeping Bear Dunes, Dad {1} down the giant sand hill screaming \"{4}!!!\" It was so {0} that even {2} would have been impressed. Then the sky turned {3} and it started raining {6}. We climbed {5} steps back up to the RV, poured sand out of every shoe, and made a family vow: next time, we bring snacks."}
+];
+let mlIx=0;
+const mlPick=document.getElementById("mlPick");
+MADLIBS.forEach((m,i)=>{
+  const b=document.createElement("button");
+  b.className="pick"+(i===0?" sel":""); b.textContent=m.t;
+  b.onclick=()=>{ mlIx=i; [...mlPick.children].forEach(c=>c.classList.toggle("sel",c===b)); mlRenderInputs(); };
+  mlPick.appendChild(b);
+});
+function mlRenderInputs(){
+  const box=document.getElementById("mlInputs");
+  box.innerHTML=MADLIBS[mlIx].b.map((label,i)=>
+    '<div><label>'+(i+1)+'. '+label+'</label><input id="ml'+i+'" autocomplete="off"></div>').join("");
+  document.getElementById("mlStory").classList.remove("show");
+}
+const ML_FALLBACKS=["wiggly","banana","kersplat","pickle","sneezing","Dad","seventeen"];
+function mlGo(){
+  const m=MADLIBS[mlIx];
+  let out=m.s;
+  m.b.forEach((_,i)=>{
+    let v=(document.getElementById("ml"+i).value||"").trim();
+    if(!v) v=ML_FALLBACKS[i%ML_FALLBACKS.length];
+    out=out.split("{"+i+"}").join("<mark>"+v.replace(/</g,"&lt;")+"</mark>");
+  });
+  const st=document.getElementById("mlStory");
+  st.innerHTML=out; st.classList.add("show");
+}
+mlRenderInputs();
+
+/* ================= TRIP JOURNAL ================= */
+const JDAYS=[
+ ["1","Thu Jul 2 — Launch day!"],["2","Fri Jul 3"],["3","Sat Jul 4"],["4","Sun Jul 5"],["5","Mon Jul 6"],
+ ["6","Tue Jul 7"],["7","Wed Jul 8"],["8","Thu Jul 9"],["9","Fri Jul 10"],["10","Sat Jul 11 — Home stretch"]
+];
+const JEMO=["😴","😐","🙂","😄","🤩"];
+function renderJournal(){
+  const box=document.getElementById("journal"); if(!box) return;
+  box.innerHTML="";
+  JDAYS.forEach(([d,label])=>{
+    const e=state.journal[d]||{};
+    const row=document.createElement("div"); row.className="jday";
+    row.innerHTML='<div class="jtitle">Day '+d+' <span class="jdate">'+label+'</span><span class="saved-flash" id="jf'+d+'">Saved ✓</span></div>'+
+      '<div class="jmoji" id="jm'+d+'">'+JEMO.map((em,i)=>'<button data-r="'+i+'"'+(e.r===i?' class="sel"':'')+'>'+em+'</button>').join("")+'</div>'+
+      '<input id="jt'+d+'" placeholder="Best moment of the day..." value="'+String(e.m||"").replace(/"/g,"&quot;")+'">';
+    box.appendChild(row);
+    row.querySelectorAll(".jmoji button").forEach(b=>{
+      b.onclick=()=>{
+        state.journal[d]=state.journal[d]||{};
+        state.journal[d].r=parseInt(b.dataset.r);
+        saveState();
+        row.querySelectorAll(".jmoji button").forEach(x=>x.classList.toggle("sel",x===b));
+        jFlash(d);
+      };
+    });
+    const inp=row.querySelector("#jt"+d);
+    inp.addEventListener("change",()=>{
+      state.journal[d]=state.journal[d]||{};
+      state.journal[d].m=inp.value;
+      saveState(); jFlash(d);
+    });
+  });
+}
+function jFlash(d){
+  const f=document.getElementById("jf"+d);
+  f.classList.add("on"); setTimeout(()=>f.classList.remove("on"),1200);
+}
+
+/* ================= INIT ================= */
+function renderAll(){
+  renderPlates(); renderBadges();
+  document.getElementById("jokeCount").textContent=state.jokesHeard||0;
+  if(!state.bingo || !state.bingo.items || !state.bingo.items.length) genBingoCard();
+  renderBingo(); renderMooseHS(); scrRender(); renderJournal();
+}
+renderAll();
+loadState();
+setTimeout(()=>driveTo(0),300);
+
+/* ================= OFFLINE SUPPORT ================= */
+// Everything in this app — facts, games, jokes, and all saved progress — runs
+// entirely on-device. The only thing that ever needed the internet was the
+// very first page load. This registers a cache so repeat visits need nothing.
+if ("serviceWorker" in navigator){
+  window.addEventListener("load", ()=>{
+    navigator.serviceWorker.register("./sw.js").catch(()=>{
+      // Registration can fail (e.g. opened as a local file:// instead of hosted
+      // on GitHub Pages) — the app still works fully, it just relies on the
+      // browser's normal page cache instead of the extra offline guarantee.
+    });
+  });
+}
+function updateNetBadge(){
+  const b=document.getElementById("netBadge");
+  if(!b) return;
+  const online=navigator.onLine;
+  b.textContent = online ? "📡 Online" : "✈️ Offline mode — everything still works!";
+  b.classList.toggle("off", !online);
+}
+window.addEventListener("online", updateNetBadge);
+window.addEventListener("offline", updateNetBadge);
+updateNetBadge();
+</script>
+</body>
+</html>
