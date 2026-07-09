@@ -2,7 +2,7 @@
 // Strategy: cache-first. The whole app is one self-contained HTML file with
 // no external calls, so once this list is cached, the page loads and runs
 // with zero network — no wifi, no cell signal, nothing.
-const CACHE = "gll-shell-v1";
+const CACHE = "gll-shell-v2";
 const SHELL = ["./", "./index.html", "./manifest.json"];
 
 self.addEventListener("install", event => {

@@ -269,6 +269,35 @@ section.show{display:block}
   animation:pop .4s;
 }
 @keyframes pop{0%{transform:scale(.4)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+.badge.lv2 .ring{border-style:solid}
+.badge.lv2.earned .ring{
+  background:linear-gradient(135deg,#FFE28A,var(--marigold));
+  border:3px solid var(--lake);
+  box-shadow:0 0 0 2px #fff inset;
+}
+.badge.boss.earned .ring{
+  background:linear-gradient(135deg,var(--campfire),var(--marigold));
+  border:3px solid var(--pine-dark);
+}
+
+/* ---------- Trophy case ---------- */
+.trophies{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.trophy{
+  display:flex;gap:8px;align-items:center;
+  background:#fff;border:2px solid var(--line);border-radius:10px;
+  padding:8px;opacity:.45;filter:grayscale(1);
+}
+.trophy.earned{opacity:1;filter:none;border-color:var(--marigold);background:#FDF3DC;animation:pop .4s}
+.trophy .tico{font-size:1.35rem;flex:none}
+.trophy b{font-size:.68rem;display:block;line-height:1.15}
+.trophy span{font-size:.58rem;font-weight:700;color:var(--ink-soft);display:block}
+
+/* ---------- Confetti ---------- */
+.cfetti{
+  position:fixed;top:-40px;z-index:99;font-size:1.25rem;
+  pointer-events:none;animation:cfall linear forwards;
+}
+@keyframes cfall{to{transform:translateY(108vh) rotate(720deg)}}
 
 /* ---------- Jokes ---------- */
 .jokestage{
@@ -399,15 +428,25 @@ section.show{display:block}
     <div class="card">
       <p style="font-weight:800;font-size:.85rem;margin-bottom:8px">1&#41; Who's playing?</p>
       <div class="pick-row" id="playerRow"></div>
-      <p style="font-weight:800;font-size:.85rem;margin-bottom:8px">2&#41; Pick a stop:</p>
+      <p style="font-weight:800;font-size:.85rem;margin-bottom:8px">2&#41; Pick your level:</p>
+      <div class="pick-row" id="quizLvlRow"></div>
+      <p style="font-weight:800;font-size:.85rem;margin-bottom:8px" id="quizStopLabel">3&#41; Pick a stop:</p>
       <div class="pick-row" id="quizStopRow"></div>
       <div id="quizArea"></div>
       <div class="h2" style="margin-top:16px">🏅 PATCH COLLECTION</div>
-      <p style="font-size:.8rem;font-weight:700;color:var(--ink-soft)">Score 4/5 or better on a stop's quiz to earn its patch.</p>
+      <p style="font-size:.8rem;font-weight:700;color:var(--ink-soft)">Score 4/5 or better to earn a stop's patch. Level 2 ⭐ Expert quizzes earn <b>gold star patches</b>. Beat the 👑 FINAL BOSS (8/10 on everything, all stops mixed) to earn the crown.</p>
       <p style="font-weight:900;font-size:.85rem;margin-top:8px">Vihaan 🥋</p>
       <div class="badges" id="badgesVihaan"></div>
       <p style="font-weight:900;font-size:.85rem;margin-top:10px">Vedant 🔢</p>
       <div class="badges" id="badgesVedant"></div>
+    </div>
+
+    <div class="h2">🏆 CREW TROPHY CASE</div>
+    <div class="card">
+      <div class="score-pill">TROPHIES: <span id="trophyCount">0</span> / <span id="trophyTotal">0</span></div>
+      <p style="font-size:.82rem;font-weight:700;color:var(--ink-soft);margin-bottom:10px">
+        These belong to the whole crew and unlock automatically while you play — jokes, plates, bingo, everything counts. Fill the case before we pull into the driveway!</p>
+      <div class="trophies" id="trophies"></div>
     </div>
 
     <div class="h2">🤔 WOULD YOU RATHER</div>
@@ -437,6 +476,7 @@ section.show{display:block}
         <button class="btn btn-pine btn-block" onclick="nextJoke()">Next joke ➡️</button>
       </div>
       <div class="groan">Jokes survived so far: <span id="jokeCount">0</span> &bull; Certified Dad-Approved™</div>
+      <div class="groan">Crew rank: <b id="jokeRank">Joke Cadet 🐣</b> <span id="jokeNext"></span></div>
     </div>
   </section>
 
@@ -445,12 +485,13 @@ section.show{display:block}
     <div class="h2">🫎 MOOSE DASH <em>// 30-second showdown</em></div>
     <div class="card">
       <p style="font-size:.82rem;font-weight:700;color:var(--ink-soft);margin-bottom:8px">
-        Tap the moose 🫎 (+1 point). Do NOT tap the skunk 🦨 (−2 points). Fastest thumbs in the RV wins.</p>
+        Tap the moose 🫎 (+1 point). Do NOT tap the skunk 🦨 (−2 points). On Pro and Legend, a golden star moose 🌟 is worth +5 — if your thumbs are fast enough. Fastest thumbs in the RV wins.</p>
       <div class="pick-row" id="mooseWho"></div>
+      <div class="pick-row" id="mooseLvl"></div>
       <div class="moose-hud"><span>TIME: <span id="mTime">30</span></span><span>SCORE: <span id="mScore">0</span></span></div>
       <div class="moose-grid" id="mGrid"></div>
       <button class="btn btn-gold btn-block" style="margin-top:10px" id="mStart" onclick="startMoose()">Start game 🫎</button>
-      <p style="text-align:center;font-weight:900;font-size:.85rem;margin-top:8px">High scores — Vihaan 🥋: <span id="hsV">0</span> &bull; Vedant 🔢: <span id="hsD">0</span></p>
+      <p style="text-align:center;font-weight:900;font-size:.85rem;margin-top:8px">High scores (<span id="hsLvl">Rookie 🌲</span>) — Vihaan 🥋: <span id="hsV">0</span> &bull; Vedant 🔢: <span id="hsD">0</span></p>
     </div>
 
     <div class="h2">🎯 ROAD TRIP BINGO</div>
@@ -465,7 +506,7 @@ section.show{display:block}
     <div class="h2">🔤 WORD SCRAMBLE</div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center">
-        <span class="scr-prog">SOLVED: <span id="scrProg">0</span>/12</span>
+        <span class="scr-prog">SOLVED: <span id="scrProg">0</span>/24</span>
         <button class="btn btn-ghost" style="padding:6px 12px;font-size:.78rem" onclick="scrNext()">Skip ↷</button>
       </div>
       <div class="tiles" id="scrTiles"></div>
@@ -620,6 +661,60 @@ const QUIZ = {
   {q:"What happens to the Tip every day?",o:["Waves reshape the sand, so it changes","It glows","It grows 1 km"],c:0}]
 };
 
+/* Level 2 — Expert. Same stops, trickier questions. */
+const QUIZ2 = {
+ tobermory:[
+  {q:"About how many shipwrecks rest in Fathom Five park?",o:["More than 20","Exactly 3","About 500"],c:0},
+  {q:"Fathom Five was Canada's very first national ___ park.",o:["Marine (underwater)","Mountain","Desert"],c:0},
+  {q:"Tobermory sits at the tip of which peninsula?",o:["The Bruce Peninsula","The Yucatan","The Boot of Italy"],c:0},
+  {q:"What language does “Chi-Cheemaun” come from?",o:["Ojibwe","French","Norwegian"],c:0},
+  {q:"How can you see the shipwrecks WITHOUT diving?",o:["Glass-bottom boat + super clear water","X-ray goggles","They float up at noon"],c:0}],
+ manitoulin:[
+  {q:"Manitoulin Island has over 100 of what INSIDE it?",o:["Lakes","Volcanoes","Castles"],c:0},
+  {q:"What's the name of the waterfall you can walk behind?",o:["Bridal Veil Falls","Niagara Falls","Splash Mountain"],c:0},
+  {q:"Treasure Island (the brain-bender) sits in which lake?",o:["Lake Mindemoya","Lake Erie","Lake Como"],c:0},
+  {q:"Manitoulin is sacred land to which people?",o:["The Anishinaabe","The Vikings","The Romans"],c:0},
+  {q:"The Little Current swing bridge crosses into which waterway?",o:["The North Channel of Lake Huron","The Atlantic Ocean","A lava river"],c:0}],
+ soo:[
+  {q:"About how long are the giant “laker” freighters?",o:["About 300 metres","About 30 metres","About 3 km"],c:0},
+  {q:"The Soo Locks connect Lake Superior with which lake?",o:["Lake Huron","Lake Ontario","Lake Erie"],c:0},
+  {q:"How much water can Lake Superior hold?",o:["All the other Great Lakes combined — with room to spare","About one bathtub more than Lake Erie","Half of Lake Michigan"],c:0},
+  {q:"The twin Soo cities sit on which river?",o:["St. Marys River","The Mississippi","The Amazon"],c:0},
+  {q:"How long have people gathered at the rapids here?",o:["Thousands of years","About 20 years","Since 1990"],c:0}],
+ mackinac:[
+  {q:"About how many horses work on Mackinac Island in summer?",o:["About 600","About 6","About 60,000"],c:0},
+  {q:"How long is the M-185 loop around the island?",o:["About 13 km","130 km","1 km"],c:0},
+  {q:"How do packages and garbage get moved on the island?",o:["Horse-drawn wagons and bikes","Tiny helicopters","Underground trains"],c:0},
+  {q:"The Grand Hotel's porch is about as long as...",o:["Two football fields","One school bus","A marathon"],c:0},
+  {q:"Which two Great Lakes meet at the Straits of Mackinac?",o:["Michigan and Huron","Erie and Ontario","Superior and Erie"],c:0}],
+ dunes:[
+  {q:"In the legend, why did the bears swim across the lake?",o:["Escaping a great forest fire","Racing for fun","Chasing salmon"],c:0},
+  {q:"What are the two islands offshore called?",o:["The Manitou Islands","The Bear Twins","The Sandy Sisters"],c:0},
+  {q:"Sleeping Bear Dunes is on which US state's shoreline?",o:["Michigan","Ohio","Texas"],c:0},
+  {q:"Whose legend tells the story of the sleeping bear?",o:["The Ojibwe","The pirates of Lake Michigan","Good Morning America"],c:0},
+  {q:"What's the pro technique for the Dune Climb?",o:["Big lunging moon-steps","Tiptoes only","Backwards crab-walk"],c:0}],
+ pelee:[
+  {q:"How many bird species have been spotted at Point Pelee?",o:["390+","Exactly 12","About 100"],c:0},
+  {q:"Monarchs cross Lake Erie on their way to which country?",o:["Mexico","Iceland","Japan"],c:0},
+  {q:"Who gave Pelee its name (French for “bald”)?",o:["French explorers","Roman soldiers","Astronauts"],c:0},
+  {q:"Point Pelee is one of Canada's ___ national parks.",o:["Smallest","Largest","Coldest"],c:0},
+  {q:"The marsh boardwalk is the best place to spot...",o:["Turtles and birds","Polar bears","Whales"],c:0}]
+};
+
+/* Final Boss — 10 questions, every stop, need 8 to win. */
+const BOSS = [
+ {q:"How many Great Lakes are there in total?",o:["Five","Three","Nine"],c:0},
+ {q:"Which Great Lake did this trip NOT touch?",o:["Lake Ontario","Lake Huron","Lake Erie"],c:0},
+ {q:"“Chi-Cheemaun” means...",o:["Big Canoe","Fast Ferry","Water Horse"],c:0},
+ {q:"The largest freshwater island on Earth is...",o:["Manitoulin","Mackinac","Flowerpot"],c:0},
+ {q:"The biggest freshwater lake on the planet by area is...",o:["Lake Superior","Lake Michigan","Lake Victoria"],c:0},
+ {q:"On Mackinac Island you will NOT find...",o:["Cars","Horses","Fudge"],c:0},
+ {q:"In the Sleeping Bear legend, the big dune is...",o:["The mother bear, waiting on shore","A sleeping giant","A buried pirate ship"],c:0},
+ {q:"The southernmost point of mainland Canada is...",o:["Point Pelee","Tobermory","The Soo"],c:0},
+ {q:"The Soo Locks work like a giant...",o:["Water elevator for ships","Car wash","Whirlpool"],c:0},
+ {q:"How many countries did this loop visit?",o:["Two","One","Four"],c:0}
+];
+
 const JOKES = [
  {s:"What did Lake Huron say to Lake Michigan?",p:"Nothing. It just waved. 🌊"},
  {s:"Why can't you trust the ocean?",p:"It's way too salty. That's why we do the Great Lakes — they're fresh!"},
@@ -640,7 +735,47 @@ const JOKES = [
  {s:"What's the quietest game in the RV?",p:"The one Dad invented 10 minutes into the drive."},
  {s:"Why did the butterfly never get lost?",p:"It always went with its gut... erfly instinct. 🦋"},
  {s:"What did the GPS say after 9 days on the road?",p:"“You have arrived... at maximum family bonding.”"},
- {s:"Why do freighters make terrible comedians?",p:"Their delivery takes weeks. 🚢"}
+ {s:"Why do freighters make terrible comedians?",p:"Their delivery takes weeks. 🚢"},
+ {s:"What do you call a moose with no name?",p:"Anonymoose. 🫎"},
+ {s:"Why did the RV bring a ladder?",p:"It heard the trip was full of HIGH-ways."},
+ {s:"What's a skunk's favourite car game?",p:"I spy with my little eye... something that STINKS. (It's him. It's always him.) 🦨"},
+ {s:"Why did the map get detention?",p:"It kept giving everybody directions. 🗺️"},
+ {s:"What do you call a sleeping bull at a campground?",p:"A bull-dozer. 🚜"},
+ {s:"Why are ghosts terrible campers?",p:"They forget the tent and just bring sheets. 👻"},
+ {s:"What did the marshmallow say to the campfire?",p:"“You're on fire tonight!” ...Then it got toasted. 🔥"},
+ {s:"Why do trees have so many friends?",p:"They branch out. 🌲"},
+ {s:"What's an RV's favourite meal?",p:"BRAKE-fast. Served at every red light."},
+ {s:"Why did the seagull get a parking ticket?",p:"Ill-eagle parking on the beach. 🐦"},
+ {s:"What kind of music do the Great Lakes listen to?",p:"Anything with a good WAVE-length. 🎵"},
+ {s:"Why can't the RV keep a secret?",p:"Too many windows — everything leaks out. 🚐"},
+ {s:"What do you call a fish with two knees?",p:"A two-knee fish. (Say it faster. There it is.) 🐟"},
+ {s:"Why did the tomato turn red at the campground?",p:"It saw the salad dressing. 🍅"},
+ {s:"What's the fastest thing on Mackinac Island?",p:"Gossip. The horses hear EVERYTHING. 🐴"},
+ {s:"Why do ducks make great road trippers?",p:"They always bring their own bills. 🦆"},
+ {s:"What did zero say to eight?",p:"“Nice seatbelt!” (Vedant, check its math.) 🔢"},
+ {s:"Why did Vihaan bow to Lake Superior?",p:"Respect. That lake has a black belt in WAVES. 🥋"},
+ {s:"How do you make a tissue dance?",p:"You put a little boogie in it. 🕺"},
+ {s:"What do you call a dinosaur at a rest stop?",p:"A Tyranno-saurus REST. 🦖"},
+ {s:"Why was the sand wet?",p:"Because the sea weed. (In a lake it's even worse.) 🌊"},
+ {s:"What did the big rock say to the little rock on Flowerpot Island?",p:"“Hey, bud! You're growing on me.” 🌸"},
+ {s:"Why don't lighthouses ever feel lonely?",p:"Ships are always checking them out. 💡"},
+ {s:"What's a turtle's top speed?",p:"Whatever it is, the marsh boardwalk is its racetrack. 🐢"},
+ {s:"Why did the cow cross the border?",p:"To get to the UDDER side. 🐄"},
+ {s:"What do you call a bee that can't make up its mind?",p:"A maybe. 🐝"},
+ {s:"Why did the family photo go to jail?",p:"It was framed. 📸"},
+ {s:"What has four wheels and flies?",p:"A garbage truck. (NOT our RV. Mostly.) 🗑️"},
+ {s:"Why did the butterfly get kicked out of the dance?",p:"It was a total MOTH-ball. 🦋"},
+ {s:"What did Lake Erie say when Lake Superior kept bragging?",p:"“Whatever floats your boat, big guy.” ⛵"},
+ {s:"Why are campfires the best audience?",p:"They crackle up at every story. 🔥"},
+ {s:"What's a horse's favourite sport?",p:"Stable tennis. 🐴🏓"},
+ {s:"Why did the smartphone need glasses?",p:"It lost all its contacts. 📱"},
+ {s:"What's a pirate's favourite Great Lake?",p:"Lake ARRRR-ie! 🏴‍☠️"},
+ {s:"Why can't you win an argument with a lake?",p:"It always has a deeper point. 🌊"},
+ {s:"Why did the banana wear sunscreen at the beach?",p:"It was starting to peel. 🍌"},
+ {s:"What do you call two RVs that just got married?",p:"Hitched! It was a very MOVING ceremony. 🚐💍"},
+ {s:"Why was the belt pulled over at the border?",p:"For holding up a pair of pants. 👖"},
+ {s:"What did the odometer say on the last leg home?",p:"“I'm absolutely EXHAUSTED... no wait, that's the pipe behind me.” 🚐"},
+ {s:"How many dad jokes does Dad have left?",p:"Trick question. The tank is ALWAYS full. 😎⛽"}
 ];
 
 const WYR = [
@@ -659,7 +794,21 @@ const WYR = [
  ["Rain on every driving day 🌧️","Mosquitoes at every campfire 🦟"],
  ["No screens for the whole trip 📵","No snacks for the whole trip 😱"],
  ["Sleep on the RV roof under the stars ✨","Sleep in a hammock between two trees 🌲"],
- ["Swim in all 4 Great Lakes in one day 🏊","Stand at the Tip of Canada for a whole hour 🇨🇦"]
+ ["Swim in all 4 Great Lakes in one day 🏊","Stand at the Tip of Canada for a whole hour 🇨🇦"],
+ ["Control the RV music for the whole last leg 🎧","Control the snacks for the whole last leg 🍿"],
+ ["Have a horn that honks dad jokes out loud 📣","Have wipers that high-five you when it rains 🖐️"],
+ ["Shrink to mouse-size and explore the dashboard 🐭","Grow giant-size and step over Lake Erie in one stride 🦶"],
+ ["Be able to talk to seagulls 🐦","Be able to talk to moose 🫎"],
+ ["Every red light turns green just for you, forever 🚦","Never hit a single pothole for the rest of your life 🕳️"],
+ ["Your burps sound like a ferry horn ⛴️","Your sneezes sound like a loon call 🪿"],
+ ["A bottomless bag of trail mix that's ALL chocolate 🍫","A slushie machine built into the RV 🥤"],
+ ["Live one week in a lighthouse 💡","Live one week aboard the Chi-Cheemaun ⛴️"],
+ ["Win every licence-plate game forever 🚙","Win every bingo forever 🎯"],
+ ["Fly with the monarch migration (tiny you) 🦋","Ride a freighter through the Soo Locks (normal you) 🚢"],
+ ["Dad narrates your life like a nature documentary 🎙️","A tiny drummer plays ba-dum-tss after everything you say 🥁"],
+ ["Tomorrow is Day 1 of this trip all over again 🔁","We're home in 5 minutes and pizza is waiting 🍕"],
+ ["The RV can float across lakes 🚐🌊","The RV can glide over traffic jams 🚐✈️"],
+ ["All homework forever is written in dad jokes 😂","All homework forever is graded by seagulls 🐦"]
 ];
 
 const CLASSICS = [
@@ -668,7 +817,10 @@ const CLASSICS = [
  {t:"Cows On My Side 🐄",d:"See cows on your side? Yell “Cows on my side!” — 1 point per sighting. Pass a cemetery and yell “Ghost cow!” first? The other side loses ALL points."},
  {t:"Story Chain 📖",d:"Build a story one sentence at a time, going around the RV. Rule: every third sentence must include something you can see out the window."},
  {t:"Categories: Name 5 ⏱️",d:"Pick a category (Great Lakes animals, ferry things, fudge flavours). Player has 10 seconds to name 5. Judges: everyone else."},
- {t:"Two Truths & a Lie 🕵️",d:"About the day's stop! Say 3 “facts” — one is fake. Steal material from the Route tab... if you dare."}
+ {t:"Two Truths & a Lie 🕵️",d:"About the day's stop! Say 3 “facts” — one is fake. Steal material from the Route tab... if you dare."},
+ {t:"The Silent Game: Boss Level 🤐",d:"Nobody talks until the next town sign. Dad is allowed to fire dad jokes at you. Survive 3 jokes without cracking = instant legend status."},
+ {t:"RV Radio DJ 🎙️",d:"Take turns as DJ: pick a song, then do a 10-second radio-announcer intro in your most dramatic voice before it plays. Bonus points for a fake traffic report."},
+ {t:"Countdown to Home 🏠",d:"Everyone guesses the exact minute the RV pulls into our driveway. Closest without going over picks tonight's dinner. Lock in your guesses — no changing!"}
 ];
 
 const TIPS = [
@@ -686,24 +838,57 @@ const TIPS = [
 
 /* ================= STATE + STORAGE ================= */
 let state = {plates:[], badges:{vihaan:[], vedant:[]}, jokesHeard:0,
-  bingo:{items:[],marks:[]}, moose:{vihaan:0,vedant:0}, scramble:[], journal:{}};
+  bingo:{items:[],marks:[]}, moose:{vihaan:0,vedant:0}, scramble:[], journal:{},
+  badges2:{vihaan:[], vedant:[]}, boss:{vihaan:false, vedant:false},
+  bingoWins:0, mooseHS:null, trophySeen:0};
+// Older saved games won't have the new fields — fill any gaps so nothing crashes
+// and existing progress (patches, plates, high scores) carries straight over.
+function ensureState(){
+  state.badges = state.badges||{}; state.badges.vihaan=state.badges.vihaan||[]; state.badges.vedant=state.badges.vedant||[];
+  state.badges2 = state.badges2||{}; state.badges2.vihaan=state.badges2.vihaan||[]; state.badges2.vedant=state.badges2.vedant||[];
+  state.boss = state.boss||{vihaan:false,vedant:false};
+  state.bingo = state.bingo||{items:[],marks:[]};
+  state.bingoWins = state.bingoWins||0;
+  state.trophySeen = state.trophySeen||0;
+  state.scramble = state.scramble||[];
+  state.journal = state.journal||{};
+  state.plates = state.plates||[];
+  if(!state.mooseHS){
+    const old=state.moose||{};
+    state.mooseHS={vihaan:[old.vihaan||0,0,0], vedant:[old.vedant||0,0,0]};
+  }
+}
 const SKEY = "gll-trip-2026";
 // Uses Claude's artifact storage when running inside claude.ai; falls back to the
 // browser's own localStorage when opened as a standalone file (e.g. on a tablet).
 const hasClaudeStorage = typeof window.storage !== "undefined";
 async function loadState(){
   try{
+    let saved=null;
     if(hasClaudeStorage){
       const r = await window.storage.get(SKEY);
-      if(r && r.value) state = Object.assign(state, JSON.parse(r.value));
+      if(r && r.value) saved = JSON.parse(r.value);
     } else {
       const raw = localStorage.getItem(SKEY);
-      if(raw) state = Object.assign(state, JSON.parse(raw));
+      if(raw) saved = JSON.parse(raw);
+    }
+    if(saved){
+      state = Object.assign(state, saved);
+      // A pre-update save has no mooseHS — clear the placeholder built at boot
+      // so ensureState() (in renderAll) migrates the old high scores into it.
+      if(!saved.mooseHS) state.mooseHS = null;
     }
   }catch(e){}
   renderAll();
 }
+let savingMeta=false;
 async function saveState(){
+  // Any saved progress might unlock a crew trophy — keep the case live.
+  if(!savingMeta){
+    savingMeta=true;
+    try{ renderTrophies(); }catch(e){}
+    savingMeta=false;
+  }
   try{
     if(hasClaudeStorage) await window.storage.set(SKEY, JSON.stringify(state));
     else localStorage.setItem(SKEY, JSON.stringify(state));
@@ -786,12 +971,24 @@ function renderPlates(){
 }
 
 /* ================= TRIVIA ================= */
-let player=null, quizStop=null, qIdx=0, qScore=0, qLocked=false;
+let player=null, quizStop=null, quizLevel=1, qIdx=0, qScore=0, qLocked=false;
 const playerRow=document.getElementById("playerRow");
 [["vihaan","Vihaan 🥋"],["vedant","Vedant 🔢"]].forEach(([id,label])=>{
   const b=document.createElement("button"); b.className="pick"; b.textContent=label;
   b.onclick=()=>{ player=id; [...playerRow.children].forEach(c=>c.classList.toggle("sel",c===b)); maybeStartQuiz(); };
   playerRow.appendChild(b);
+});
+const quizLvlRow=document.getElementById("quizLvlRow");
+[[1,"🌲 Level 1: Ranger"],[2,"⭐ Level 2: Expert"],[3,"👑 FINAL BOSS"]].forEach(([lv,label],k)=>{
+  const b=document.createElement("button"); b.className="pick"+(k===0?" sel":""); b.textContent=label;
+  b.onclick=()=>{
+    quizLevel=lv; [...quizLvlRow.children].forEach(c=>c.classList.toggle("sel",c===b));
+    const bossMode=lv===3;
+    document.getElementById("quizStopLabel").style.display=bossMode?"none":"";
+    document.getElementById("quizStopRow").style.display=bossMode?"none":"";
+    maybeStartQuiz();
+  };
+  quizLvlRow.appendChild(b);
 });
 const quizStopRow=document.getElementById("quizStopRow");
 LEGS.forEach(l=>{
@@ -801,21 +998,34 @@ LEGS.forEach(l=>{
 });
 function maybeStartQuiz(){
   const area=document.getElementById("quizArea");
-  if(!player||!quizStop){ area.innerHTML=""; return; }
+  if(!player || (quizLevel!==3 && !quizStop)){ area.innerHTML=""; return; }
   qIdx=0; qScore=0; renderQ();
+}
+function quizSet(){
+  if(quizLevel===3) return BOSS;
+  return (quizLevel===2?QUIZ2:QUIZ)[quizStop];
 }
 function renderQ(){
   const area=document.getElementById("quizArea");
-  const qs=QUIZ[quizStop];
+  const qs=quizSet();
   if(qIdx>=qs.length){
-    const passed=qScore>=4;
-    if(passed && !state.badges[player].includes(quizStop)){
-      state.badges[player].push(quizStop); saveState();
+    const need = quizLevel===3?8:4;
+    const passed=qScore>=need;
+    let msg;
+    if(quizLevel===3){
+      if(passed && !state.boss[player]){ state.boss[player]=true; saveState(); confetti(); }
+      msg = passed?"👑 LOOP LEGEND!!! You beat the ENTIRE trip. Crown patch earned!":"The Boss survives... this time. You need "+need+"/10. Study the Route tab and come back!";
+    } else if(quizLevel===2){
+      if(passed && !state.badges2[player].includes(quizStop)){ state.badges2[player].push(quizStop); saveState(); confetti(); }
+      msg = passed?"⭐ EXPERT PATCH EARNED! That's the gold stuff.":"Expert level is no joke! Read the Route facts and try again.";
+    } else {
+      if(passed && !state.badges[player].includes(quizStop)){ state.badges[player].push(quizStop); saveState(); confetti(); }
+      msg = passed?"🏅 PATCH EARNED! Check the collection below.":"So close! Read the Route facts and try again.";
     }
     area.innerHTML='<div class="qbox" style="text-align:center">'+
       '<div class="qnum">FINAL SCORE</div>'+
       '<div class="qtext" style="font-size:1.4rem">'+qScore+' / '+qs.length+'</div>'+
-      '<p style="font-weight:800;margin-bottom:10px">'+(passed?"🏅 PATCH EARNED! Check the collection below.":"So close! Read the Route facts and try again.")+'</p>'+
+      '<p style="font-weight:800;margin-bottom:10px">'+msg+'</p>'+
       '<button class="btn btn-gold" onclick="maybeStartQuiz()">Play again 🔁</button></div>';
     renderBadges();
     return;
@@ -846,7 +1056,74 @@ function renderBadges(){
       d.innerHTML='<div class="ring">'+l.emoji+'</div>'+l.chip;
       el.appendChild(d);
     });
+    LEGS.forEach(l=>{
+      const earned=state.badges2[pl].includes(l.id);
+      const d=document.createElement("div");
+      d.className="badge lv2"+(earned?" earned":"");
+      d.innerHTML='<div class="ring">'+(earned?"⭐":l.emoji)+'</div>⭐ '+l.chip;
+      el.appendChild(d);
+    });
+    const bd=document.createElement("div");
+    bd.className="badge boss"+(state.boss[pl]?" earned":"");
+    bd.innerHTML='<div class="ring">👑</div>LOOP LEGEND';
+    el.appendChild(bd);
   });
+}
+
+/* ================= CREW TROPHY CASE ================= */
+function plateScore(){ return PLATES.reduce((s,p)=>s+(state.plates.includes(p.a)?p.p:0),0); }
+function bestMoose(){ return Math.max(0,...state.mooseHS.vihaan,...state.mooseHS.vedant); }
+const TROPHIES=[
+ {i:"🚙",t:"Plate Scout",d:"Collect 10 plate points",f:()=>plateScore()>=10},
+ {i:"🛻",t:"Plate Hunter",d:"Collect 25 plate points",f:()=>plateScore()>=25},
+ {i:"👑",t:"Plate Royalty",d:"Collect 40 plate points",f:()=>plateScore()>=40},
+ {i:"😏",t:"Groan Apprentice",d:"Survive 10 dad jokes",f:()=>(state.jokesHeard||0)>=10},
+ {i:"🎤",t:"Punchline Pro",d:"Survive 30 dad jokes",f:()=>(state.jokesHeard||0)>=30},
+ {i:"🥋",t:"Dad-Joke Black Belt",d:"Survive 60 dad jokes",f:()=>(state.jokesHeard||0)>=60},
+ {i:"🔤",t:"Word Wizard",d:"Solve 12 word scrambles",f:()=>state.scramble.length>=12},
+ {i:"🧙",t:"Word Grandmaster",d:"Solve ALL 24 scrambles",f:()=>state.scramble.length>=24},
+ {i:"🫎",t:"Moose Rookie",d:"Score 10+ in Moose Dash",f:()=>bestMoose()>=10},
+ {i:"🏆",t:"Moose Legend",d:"Score 25+ in Moose Dash",f:()=>bestMoose()>=25},
+ {i:"🎯",t:"Bingo Boss",d:"Win a road trip bingo",f:()=>(state.bingoWins||0)>=1},
+ {i:"🔥",t:"Bingo Dynasty",d:"Win 3 bingos",f:()=>(state.bingoWins||0)>=3},
+ {i:"🏅",t:"Patch Pioneers",d:"Earn 6 Level 1 patches (crew total)",f:()=>state.badges.vihaan.length+state.badges.vedant.length>=6},
+ {i:"⭐",t:"Expert Explorers",d:"Earn 6 Expert patches (crew total)",f:()=>state.badges2.vihaan.length+state.badges2.vedant.length>=6},
+ {i:"🗺️",t:"Loop Legend",d:"Someone beats the FINAL BOSS",f:()=>state.boss.vihaan||state.boss.vedant},
+ {i:"📓",t:"Storykeeper",d:"Fill in 5 journal days",f:()=>Object.keys(state.journal).length>=5}
+];
+function renderTrophies(){
+  const box=document.getElementById("trophies"); if(!box) return;
+  box.innerHTML="";
+  let earned=0;
+  TROPHIES.forEach(tr=>{
+    let ok=false; try{ ok=!!tr.f(); }catch(e){}
+    if(ok) earned++;
+    const d=document.createElement("div");
+    d.className="trophy"+(ok?" earned":"");
+    d.innerHTML='<div class="tico">'+tr.i+'</div><div><b>'+tr.t+'</b><span>'+tr.d+'</span></div>';
+    box.appendChild(d);
+  });
+  document.getElementById("trophyCount").textContent=earned;
+  document.getElementById("trophyTotal").textContent=TROPHIES.length;
+  if(earned>(state.trophySeen||0)){
+    state.trophySeen=earned;
+    confetti();
+    saveState(); // savingMeta guard prevents a render loop
+  }
+}
+
+/* ================= CONFETTI ================= */
+function confetti(){
+  const EMO=["🎉","⭐","🏅","🎊","✨","🫎","🍁"];
+  for(let i=0;i<22;i++){
+    const s=document.createElement("span");
+    s.className="cfetti"; s.textContent=EMO[i%EMO.length];
+    s.style.left=(Math.random()*94)+"vw";
+    s.style.animationDuration=(1+Math.random()*1.3)+"s";
+    s.style.animationDelay=(Math.random()*0.35)+"s";
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),2800);
+  }
 }
 
 /* ================= JOKES ================= */
@@ -866,7 +1143,24 @@ function revealJoke(){
     st.classList.add("revealed");
     state.jokesHeard++; saveState();
     document.getElementById("jokeCount").textContent=state.jokesHeard;
+    updateJokeRank();
   }
+}
+const JRANKS=[
+ [0,"Joke Cadet 🐣"],[10,"Groan Apprentice 😏"],[25,"Punchline Pro 🎤"],
+ [50,"Dad-Joke Black Belt 🥋"],[75,"Groan Master 😂"],[100,"Supreme Groan-Lord of the Lakes 👑"]
+];
+function updateJokeRank(){
+  const n=state.jokesHeard||0;
+  let rank=JRANKS[0][1], next=null;
+  JRANKS.forEach(([min,name])=>{
+    if(n>=min) rank=name;
+    else if(next===null) next=min;
+  });
+  document.getElementById("jokeRank").textContent=rank;
+  document.getElementById("jokeNext").textContent = next===null
+    ? "— MAX RANK. The lakes bow to you."
+    : "— next rank at "+next+" jokes!";
 }
 
 /* ================= WYR ================= */
@@ -892,11 +1186,13 @@ const BINGO_POOL = [
  ["🟡","Yellow car"],["🚗","Convertible"],["🚜","Tractor"],["🌾","Hay bales"],["🐦","Seagull"],
  ["⛴️","A ferry"],["🛶","Kayak on a roof"],["⛽","Gas station"],["🍦","Ice cream shop"],["🌽","Corn field"],
  ["🚴","Cyclist"],["🏕️","Camper trailer"],["💯","Speed limit 100"],["🚧","Construction cones"],["🅿️","Rest area sign"],
- ["🚙","Antique car"],["🌮","Food truck"],["🐿️","Squirrel"],["✈️","Airplane in the sky"],["🌈","Rainbow (lucky!)"]
+ ["🚙","Antique car"],["🌮","Food truck"],["🐿️","Squirrel"],["✈️","Airplane in the sky"],["🌈","Rainbow (lucky!)"],
+ ["🌻","Sunflower field"],["🛻","Truck towing a boat"],["🍟","Drive-thru sign"],["🦅","Big bird of prey"],["🚁","Helicopter"],
+ ["😴","Someone asleep in a car"],["🎈","Balloon or inflatable"],["🧢","Someone in a funny hat"],["🚛","Truck with 18 wheels"],["🛞","Spare tire on a bumper"]
 ];
 function genBingoCard(){
   const pool=[...BINGO_POOL].sort(()=>Math.random()-.5).slice(0,24);
-  state.bingo={items:pool.map(p=>p[0]+"|"+p[1]), marks:[]};
+  state.bingo={items:pool.map(p=>p[0]+"|"+p[1]), marks:[], won:false};
 }
 function newBingo(){
   if(state.bingo.marks.length && !confirm("Shuffle a new card? This clears your marks.")) return;
@@ -922,7 +1218,14 @@ function renderBingo(){
     }
     g.appendChild(d);
   }
-  document.getElementById("bingoBanner").classList.toggle("show", hasBingo());
+  const win=hasBingo();
+  document.getElementById("bingoBanner").classList.toggle("show", win);
+  if(win && !state.bingo.won){
+    state.bingo.won=true;
+    state.bingoWins=(state.bingoWins||0)+1;
+    confetti();
+    saveState();
+  }
 }
 function hasBingo(){
   const on=i=> i===12 || state.bingo.marks.includes(i<12?i:i-1);
@@ -936,7 +1239,12 @@ function hasBingo(){
 }
 
 /* ================= MOOSE DASH ================= */
-let mPlayer="vihaan", mRun=false, mScore=0, mLeft=30, mClock=null, mPopT=null, mCell=-1, mKind="";
+const MLEVELS=[
+ {name:"Rookie 🌲", base:850, min:430, step:14, skunk:.22, star:0},
+ {name:"Pro 🔥",    base:700, min:330, step:16, skunk:.28, star:.06},
+ {name:"Legend 🌟", base:560, min:260, step:18, skunk:.32, star:.08}
+];
+let mPlayer="vihaan", mLvl=0, mRun=false, mScore=0, mLeft=30, mClock=null, mPopT=null, mCell=-1, mKind="";
 const mGrid=document.getElementById("mGrid");
 for(let i=0;i<9;i++){
   const h=document.createElement("div");
@@ -950,6 +1258,13 @@ const mooseWho=document.getElementById("mooseWho");
   b.className="pick"+(k===0?" sel":""); b.textContent=label;
   b.onclick=()=>{ if(mRun) return; mPlayer=id; [...mooseWho.children].forEach(c=>c.classList.toggle("sel",c===b)); };
   mooseWho.appendChild(b);
+});
+const mooseLvl=document.getElementById("mooseLvl");
+MLEVELS.forEach((lv,k)=>{
+  const b=document.createElement("button");
+  b.className="pick"+(k===0?" sel":""); b.textContent=lv.name;
+  b.onclick=()=>{ if(mRun) return; mLvl=k; [...mooseLvl.children].forEach(c=>c.classList.toggle("sel",c===b)); renderMooseHS(); };
+  mooseLvl.appendChild(b);
 });
 function startMoose(){
   if(mRun) return;
@@ -965,10 +1280,12 @@ function startMoose(){
 }
 function popNext(){
   clearHole();
+  const lv=MLEVELS[mLvl];
   mCell=Math.floor(Math.random()*9);
-  mKind=Math.random()<0.22?"🦨":"🫎";
+  const r=Math.random();
+  mKind = r<lv.star ? "🌟" : (r<lv.star+lv.skunk ? "🦨" : "🫎");
   mGrid.children[mCell].textContent=mKind;
-  const delay=Math.max(430, 850 - (30-mLeft)*14);
+  const delay=Math.max(lv.min, lv.base - (30-mLeft)*lv.step);
   mPopT=setTimeout(popNext, delay);
 }
 function clearHole(){
@@ -977,7 +1294,7 @@ function clearHole(){
 }
 function hitHole(i){
   if(!mRun || i!==mCell) return;
-  mScore += (mKind==="🫎") ? 1 : -2;
+  mScore += (mKind==="🌟") ? 5 : (mKind==="🫎") ? 1 : -2;
   if(mScore<0) mScore=0;
   document.getElementById("mScore").textContent=mScore;
   clearHole();
@@ -986,15 +1303,17 @@ function endMoose(){
   mRun=false;
   clearInterval(mClock); clearTimeout(mPopT); clearHole();
   document.getElementById("mStart").textContent="Play again 🫎";
-  if(mScore > (state.moose[mPlayer]||0)){
-    state.moose[mPlayer]=mScore; saveState();
-    alert("🏆 NEW HIGH SCORE for "+(mPlayer==="vihaan"?"Vihaan":"Vedant")+": "+mScore+"!");
+  if(mScore > (state.mooseHS[mPlayer][mLvl]||0)){
+    state.mooseHS[mPlayer][mLvl]=mScore; saveState();
+    confetti();
+    alert("🏆 NEW "+MLEVELS[mLvl].name+" HIGH SCORE for "+(mPlayer==="vihaan"?"Vihaan":"Vedant")+": "+mScore+"!");
   }
   renderMooseHS();
 }
 function renderMooseHS(){
-  document.getElementById("hsV").textContent=state.moose.vihaan||0;
-  document.getElementById("hsD").textContent=state.moose.vedant||0;
+  document.getElementById("hsLvl").textContent=MLEVELS[mLvl].name;
+  document.getElementById("hsV").textContent=state.mooseHS.vihaan[mLvl]||0;
+  document.getElementById("hsD").textContent=state.mooseHS.vedant[mLvl]||0;
 }
 
 /* ================= WORD SCRAMBLE ================= */
@@ -1010,7 +1329,19 @@ const SCRAMBLE=[
  ["ISLAND","Land with water all the way around"],
  ["HORSES","Mackinac's taxi drivers"],
  ["BOARDWALK","Wooden path over the marsh at Pelee"],
- ["TOBERMORY","The town where our ferry leaves from"]
+ ["TOBERMORY","The town where our ferry leaves from"],
+ ["FREIGHTER","Giant 300-metre cargo ship of the lakes"],
+ ["SHIPWRECK","What glass-bottom boats look down at"],
+ ["PENINSULA","Land with water on three sides — like the Bruce"],
+ ["BUTTERFLY","The monarch is one"],
+ ["WATERFALL","Bridal Veil is one you can walk behind"],
+ ["CAMPGROUND","Where the RV sleeps at night"],
+ ["MARSHMALLOW","It gets toasted on a stick"],
+ ["BINOCULARS","Use these to read a freighter's name"],
+ ["FLOWERPOT","The wave-carved rock towers near Tobermory"],
+ ["ODOMETER","The dashboard counter that tracks our kilometres"],
+ ["NAVIGATOR","The co-pilot who calls out the next town"],
+ ["ADVENTURE","What this whole trip has been"]
 ];
 let scrIx=0;
 function scrUnsolved(){ return SCRAMBLE.map((w,i)=>i).filter(i=>!state.scramble.includes(SCRAMBLE[i][0])); }
@@ -1025,7 +1356,7 @@ function scrRender(){
   const left=scrUnsolved();
   if(!left.length){
     tiles.innerHTML='<span class="tile">🏆</span><span class="tile">🏆</span><span class="tile">🏆</span>';
-    document.getElementById("scrHint").textContent="You solved ALL 12! Word champions.";
+    document.getElementById("scrHint").textContent="You solved ALL 24! Word Grandmasters of the Great Lakes.";
     document.getElementById("scrInput").style.display="none";
     return;
   }
@@ -1136,10 +1467,13 @@ function jFlash(d){
 
 /* ================= INIT ================= */
 function renderAll(){
+  ensureState();
   renderPlates(); renderBadges();
   document.getElementById("jokeCount").textContent=state.jokesHeard||0;
+  updateJokeRank();
   if(!state.bingo || !state.bingo.items || !state.bingo.items.length) genBingoCard();
   renderBingo(); renderMooseHS(); scrRender(); renderJournal();
+  renderTrophies();
 }
 renderAll();
 loadState();
